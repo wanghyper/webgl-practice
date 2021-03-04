@@ -1,6 +1,7 @@
 import {babel} from '@rollup/plugin-babel';
 import serve from 'rollup-plugin-serve';
 import glsl from 'rollup-plugin-glsl';
+import resolve from '@rollup/plugin-node-resolve'
 export default {
     input: 'src/main.js',
     output: {
@@ -8,7 +9,8 @@ export default {
         format: 'esm'
     },
     plugins: [
-        serve('dist'),
+        resolve(),
+        serve({contentBase: 'dist', port: 10001}),
         glsl({
             // By default, everything gets included
             include: '**/*.glsl',
@@ -19,11 +21,7 @@ export default {
         babel({
             babelHelpers: 'bundled',
             plugins: ['@babel/plugin-proposal-class-properties'],
-            'presets': [
-                [
-                    '@babel/preset-env'
-                ]
-            ]
+            'presets': [['@babel/preset-env']]
         })
     ]
 };
