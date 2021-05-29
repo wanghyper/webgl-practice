@@ -1,4 +1,5 @@
-import Layer from './perspective-camera/index';
+// import Layer from './perspective-camera';
+import Layer from './points';
 const canvas = document.getElementById('canvas');
 canvas.width = 600;
 canvas.height = 600;

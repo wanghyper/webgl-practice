@@ -3,7 +3,7 @@ export default class GL {
     constructor(canvas) {
         this.canvas = canvas;
         this.gl = this.getGLContext();
-        this.initShaders(this.getShaders());
+        this.initProgram(this.getShaders());
     }
     getGLContext(canvas = this.canvas) {
         var gl = null;
@@ -29,23 +29,11 @@ export default class GL {
             fs_source: '',
         };
     }
-    initShaders({gl = this.gl, vs_source, fs_source}) {
+    initProgram({gl = this.gl, vs_source, fs_source}) {
         // compile shaders
-        let vertexShader = makeShader(gl, vs_source, gl.VERTEX_SHADER);
-        let fragmentShader = makeShader(gl, fs_source, gl.FRAGMENT_SHADER);
-
-        // create program
-        const glProgram = (this.glProgram = gl.createProgram());
-
-        // attach and link shaders to the program
-        gl.attachShader(glProgram, vertexShader);
-        gl.attachShader(glProgram, fragmentShader);
-        gl.linkProgram(glProgram);
-
-        if (!gl.getProgramParameter(glProgram, gl.LINK_STATUS)) {
-            console.error('Unable to initialize the shader program.');
-        }
-
+        let vertexShader = createShader(gl, vs_source, gl.VERTEX_SHADER);
+        let fragmentShader = createShader(gl, fs_source, gl.FRAGMENT_SHADER);
+        const glProgram = (this.glProgram = createProgram(gl, vertexShader, fragmentShader));
         // use program
         gl.useProgram(glProgram);
     }
@@ -60,8 +48,8 @@ export default class GL {
         gl.enableVertexAttribArray(aVertexPosition);
     }
 }
-
-function makeShader(gl, src, type) {
+// 创建着色器 参数：gl上下文，着色器内容，类型
+function createShader(gl, src, type) {
     // compile the vertex shader
     var shader = gl.createShader(type);
     gl.shaderSource(shader, src);
@@ -71,4 +59,18 @@ function makeShader(gl, src, type) {
         console.error('Error compiling shader: ' + gl.getShaderInfoLog(shader));
     }
     return shader;
+}
+// 创建着色器程序，链接着色器
+function createProgram(gl, vertexShader, fragmentShader) {
+    var program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    var success = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (success) {
+        return program;
+    }
+
+    console.log(gl.getProgramInfoLog(program));
+    gl.deleteProgram(program);
 }
