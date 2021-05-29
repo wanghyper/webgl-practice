@@ -7,7 +7,7 @@ export default class Point extends GL {
         super(canvas);
 
     }
-    getShaders(){
+    getShaders(){ 
         return  {
             vs_source: vertShader,
             fs_source: fragShader

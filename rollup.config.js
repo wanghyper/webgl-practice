@@ -1,12 +1,13 @@
 import {babel} from '@rollup/plugin-babel';
 import serve from 'rollup-plugin-serve';
 import glsl from 'rollup-plugin-glsl';
-import resolve from '@rollup/plugin-node-resolve'
+import resolve from '@rollup/plugin-node-resolve';
+
 export default {
     input: 'src/main.js',
     output: {
         file: './dist/bundle.js',
-        format: 'esm'
+        format: 'esm',
     },
     plugins: [
         resolve(),
@@ -16,12 +17,12 @@ export default {
             include: '**/*.glsl',
             exclude: 'node_modules/**',
             // Source maps are on by default
-            sourceMap: false
+            sourceMap: false,
         }),
         babel({
             babelHelpers: 'bundled',
             plugins: ['@babel/plugin-proposal-class-properties'],
-            'presets': [['@babel/preset-env']]
-        })
-    ]
+            'presets': [['@babel/preset-env']],
+        }),
+    ],
 };
