@@ -167,20 +167,9 @@ var GL = /*#__PURE__*/function () {
       // compile shaders
       var vertexShader = createShader(gl, vs_source, gl.VERTEX_SHADER);
       var fragmentShader = createShader(gl, fs_source, gl.FRAGMENT_SHADER);
-      var glProgram = this.glProgram = createProgram(gl, vertexShader, fragmentShader); // use program
+      this.glProgram = createProgram(gl, vertexShader, fragmentShader); // use program
 
-      gl.useProgram(glProgram);
-    }
-  }, {
-    key: "setupVertBuffer",
-    value: function setupVertBuffer(vertex) {
-      var gl = this.gl;
-      var vertexBuffer = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertex), gl.STATIC_DRAW);
-      var aVertexPosition = gl.getAttribLocation(this.glProgram, 'aPos');
-      gl.vertexAttribPointer(aVertexPosition, 3, gl.FLOAT, false, 0, 0);
-      gl.enableVertexAttribArray(aVertexPosition);
+      gl.useProgram(this.glProgram);
     }
   }]);
 
@@ -216,9 +205,9 @@ function createProgram(gl, vertexShader, fragmentShader) {
   gl.deleteProgram(program);
 }
 
-var vertShader = "attribute vec3 aPos;void main(void){gl_Position=vec4(aPos,1.0);gl_PointSize=10.0;}";
+var vertShader = "attribute vec2 a_pos;attribute vec4 a_color;uniform vec2 u_resolution;varying vec4 v_color;void main(void){v_color=a_color;vec2 zeroToOne=a_pos/u_resolution;vec2 clipSpace=zeroToOne*2.0-1.0;gl_Position=vec4(clipSpace*vec2(1,-1),0,1.0);}";
 
-var fragShader = "void main(void){gl_FragColor=vec4(1.0,1.0,1.0,1.0);}";
+var fragShader = "precision mediump float;varying vec4 v_color;void main(void){gl_FragColor=v_color;}";
 
 var Point = /*#__PURE__*/function (_GL) {
   _inherits(Point, _GL);
@@ -226,9 +215,18 @@ var Point = /*#__PURE__*/function (_GL) {
   var _super = _createSuper(Point);
 
   function Point(canvas) {
+    var _this;
+
     _classCallCheck(this, Point);
 
-    return _super.call(this, canvas);
+    _this = _super.call(this, canvas);
+
+    var resolutionUniformLocation = _this.gl.getUniformLocation(_this.glProgram, 'u_resolution'); // 设置全局变量 分辨率
+
+
+    _this.gl.uniform2f(resolutionUniformLocation, _this.gl.canvas.width, _this.gl.canvas.height);
+
+    return _this;
   }
 
   _createClass(Point, [{
@@ -238,23 +236,85 @@ var Point = /*#__PURE__*/function (_GL) {
         vs_source: vertShader,
         fs_source: fragShader
       };
+    } // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+
+  }, {
+    key: "setVertex",
+    value: function setVertex() {
+      var gl = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.gl;
+      this.positionBuffer = gl.createBuffer();
+      this.colorBuffer = gl.createBuffer(); // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+      this.aVertexPosition = gl.getAttribLocation(this.glProgram, 'a_pos'); // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+
+      var size = 2; // 2 components per iteration
+
+      var type = gl.FLOAT; // the data is 32bit floats
+
+      var normalize = false;
+      var stride = 0; // 0 = move forward size * sizeof(type) each iteration to get the next position
+
+      var offset = 0; // start at the beginning of the buffer
+
+      gl.vertexAttribPointer(this.aVertexPosition, size, type, normalize, stride, offset);
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer); // Turn on the color attribute
+
+      this.aColorPosition = gl.getAttribLocation(this.glProgram, 'a_color');
+      gl.vertexAttribPointer(this.aColorPosition, 4, gl.UNSIGNED_BYTE, true, stride, offset);
     }
   }, {
     key: "setupBuffer",
     value: function setupBuffer() {
-      var vertex = [0, 0, 0];
-      this.setupVertBuffer(vertex);
+      var gl = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.gl;
+
+      // 绘制50个随机颜色矩形
+      for (var ii = 0; ii < 10; ++ii) {
+        // 创建一个随机矩形
+        // 并将写入位置缓冲
+        // 因为位置缓冲是我们绑定在
+        // `ARRAY_BUFFER`绑定点上的最后一个缓冲
+        this.setRectangle(gl, // 点
+        randomInt(300), randomInt(300), randomInt(300), randomInt(300), // 颜色
+        Math.random() * 256, Math.random() * 256, Math.random() * 256, 255); // 设置一个随机颜色
+        // 绘制矩形
+
+        var primitiveType = gl.TRIANGLES;
+        var offset = 0;
+        var count = 6;
+        gl.drawArrays(primitiveType, offset, count);
+      }
+    } // 用参数生成矩形顶点并写进缓冲
+
+  }, {
+    key: "setRectangle",
+    value: function setRectangle(gl, x, y, width, height, r, g, b, a) {
+      var x1 = x;
+      var x2 = x + width;
+      var y1 = y;
+      var y2 = y + height;
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
+      gl.enableVertexAttribArray(this.aVertexPosition);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]), gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
+      gl.enableVertexAttribArray(this.aColorPosition);
+      var colorArr = new Array(6).fill([r, g, b, a]);
+      gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(colorArr.flat()), gl.STATIC_DRAW);
     }
   }, {
     key: "render",
     value: function render() {
+      this.setVertex();
       this.setupBuffer();
-      this.gl.drawArrays(this.gl.POINTS, 0, 1);
     }
   }]);
 
   return Point;
-}(GL);
+}(GL); // 返回 0 到 range 范围内的随机整数
+
+function randomInt(range) {
+  return Math.floor(Math.random() * range);
+}
 
 // import Layer from './perspective-camera';
 var canvas = document.getElementById('canvas');
