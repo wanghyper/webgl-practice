@@ -1,5 +1,5 @@
 // import Layer from './perspective-camera';
-import Layer from './triangle';
+import Layer from './textture';
 const canvas = document.getElementById('canvas');
 canvas.width = 600;
 canvas.height = 600;
