@@ -22,7 +22,7 @@ export default class Point extends GL {
         // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
         this.aVertexPosition = gl.getAttribLocation(this.glProgram, 'a_pos');
-
+        gl.enableVertexAttribArray(this.aVertexPosition);
         // Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
         var size = 2; // 2 components per iteration
         var type = gl.FLOAT; // the data is 32bit floats
@@ -34,6 +34,7 @@ export default class Point extends GL {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
         // Turn on the color attribute
         this.aColorPosition = gl.getAttribLocation(this.glProgram, 'a_color');
+        gl.enableVertexAttribArray(this.aColorPosition);
         gl.vertexAttribPointer(this.aColorPosition, 4, gl.UNSIGNED_BYTE, true, stride, offset);
     }
     setupBuffer(gl = this.gl) {
@@ -74,7 +75,6 @@ export default class Point extends GL {
         var y2 = y + height;
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionBuffer);
-        gl.enableVertexAttribArray(this.aVertexPosition);
         gl.bufferData(
             gl.ARRAY_BUFFER,
             new Float32Array([x1, y1, x2, y1, x1, y2, x1, y2, x2, y1, x2, y2]),
@@ -82,7 +82,6 @@ export default class Point extends GL {
         );
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
-        gl.enableVertexAttribArray(this.aColorPosition);
         let colorArr = new Array(6).fill([r, g, b, a])
         gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(colorArr.flat()), gl.STATIC_DRAW);
     }
