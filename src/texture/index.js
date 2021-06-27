@@ -50,7 +50,6 @@ export default class Point extends GL {
         gl.vertexAttribPointer(this.aColorPosition, 4, gl.UNSIGNED_BYTE, true, stride, offset);
     }
     setupBuffer(gl = this.gl) {
-        // 绘制50个随机颜色矩形
         // 创建一个随机矩形
         // 并将写入位置缓冲
         // 因为位置缓冲是我们绑定在

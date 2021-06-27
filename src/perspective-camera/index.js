@@ -100,7 +100,7 @@ export default class Perspective extends GL {
         mat4.perspective(pMatrix, toRadian(fovy), widthHeightRatio, near, far);
         mat4.identity(mvMatrix, mvMatrix);
         mat4.translate(mvMatrix, mvMatrix, [0, -5, -70]);
-        mat4.rotate(mvMatrix, mvMatrix, toRadian(45), [0, 1, 0]);
+        mat4.rotate(mvMatrix, mvMatrix, toRadian(50), [0, 1, 0]);
         gl.uniformMatrix4fv(glProgram.pMatrixUniform, false, pMatrix);
         gl.uniformMatrix4fv(glProgram.mvMatrixUniform, false, mvMatrix);
         this.setupBuffer();
