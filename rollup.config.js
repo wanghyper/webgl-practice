@@ -5,14 +5,15 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs' 
 
 export default {
-    input: 'src/main.js',
+    input: 'src/index.js',
     output: {
+        name: 'YUE',
         file: './dist/bundle.js',
-        format: 'esm',
+        format: 'iife',
     },
     plugins: [
         resolve(),
-        serve({contentBase: 'dist', port: 10001}),
+        serve({contentBase: './', port: 10001}),
         glsl({
             // By default, everything gets included
             include: '**/*.glsl',

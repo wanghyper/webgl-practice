@@ -3,8 +3,9 @@ import vertShader from './vert.glsl';
 import fragShader from './frag.glsl';
 
 export default class Point extends GL {
-    constructor(canvas) {
-        super(canvas);
+    constructor(canvas, option) {
+        super(canvas, option);
+        this.option = option;
         var resolutionUniformLocation = this.gl.getUniformLocation(this.glProgram, 'u_resolution');
         // 设置全局变量 分辨率
         this.gl.uniform2f(resolutionUniformLocation, this.gl.canvas.width, this.gl.canvas.height);
@@ -126,7 +127,7 @@ export default class Point extends GL {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
     }
     async render() {
-        let image = await this.getImage('./images/gold.png');
+        let image = await this.getImage(this.option.image);
         this.setTexture(image);
         this.setVertex();
         this.setupBuffer();
