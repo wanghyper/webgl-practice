@@ -9,21 +9,23 @@
             body {
                 margin: 0;
             }
-            /* canvas {
-            width: 100%;
-            height: 100%;
-        } */
+            #container {
+                width: 300px;
+                height: 200px;
+            }
         </style>
     </head>
     <body>
-        <canvas id="canvas"></canvas>
+        <div id="container"></div>
         <script src="../dist/bundle.js"></script>
     </body>
     <script>
-        const canvas = document.getElementById('canvas');
-        canvas.width = 600;
-        canvas.height = 600;
-        const layer = new YUE.Point(canvas);
-        layer.render();
+        const container = document.getElementById('container');
+        const view = new YUE.View(container);
+        const pointLayer = new YUE.PointLayer();
+        view.add(pointLayer);
+
+        const point = new YUE.Point({size: 20, x: 150, y: 100, color: '#ff00ddaa'});
+        pointLayer.setData(point);
     </script>
 </html>

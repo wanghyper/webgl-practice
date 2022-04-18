@@ -1,28 +1,30 @@
 export default class GL {
     gl = null;
-    constructor(canvas) {
+    opts = {};
+    canvas = null;
+    data = [];
+    constructor(options) {
+        this.opts = options || {};
+    }
+    initialize(canvas) {
         this.canvas = canvas;
-        this.gl = this.getGLContext();
+        this.gl = getGLContext(canvas);
         this.initProgram(this.getShaders());
-    }
-    getGLContext(canvas = this.canvas) {
-        let gl = null;
-        let glContextNames = ['webgl', 'experimental-webgl'];
-        for (let i = 0; i < glContextNames.length; i++) {
-            try {
-                gl = canvas.getContext(glContextNames[i]);
-            } catch (e) {
-                console.error('get gl context failed', e);
-            }
-            if (gl) {
-                gl.clearColor(74 / 255, 115 / 255, 94 / 255, 1.0);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-                gl.viewport(0, 0, canvas.width, canvas.height);
-                break;
-            }
+        if (this.opts.data) {
+            this.setData(this.opts.data);
         }
-        return gl;
     }
+    setData(data) {
+        if (!Array.isArray(data)) {
+            data = [data];
+        }
+        this.data = data;
+        if (this.gl) {
+            this.init();
+            this.render();
+        }
+    }
+
     getShaders() {
         return {
             vs_source: '',
@@ -37,6 +39,8 @@ export default class GL {
         // use program
         gl.useProgram(this.glProgram);
     }
+    destroy() {}
+    render() {}
 }
 // 创建着色器 参数：gl上下文，着色器内容，类型
 function createShader(gl, src, type) {
@@ -63,6 +67,24 @@ function createProgram(gl, vertexShader, fragmentShader) {
 
     console.log(gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
+}
+function getGLContext(canvas) {
+    let gl = null;
+    let glContextNames = ['webgl', 'experimental-webgl'];
+    for (let i = 0; i < glContextNames.length; i++) {
+        try {
+            gl = canvas.getContext(glContextNames[i]);
+        } catch (e) {
+            console.error('get gl context failed', e);
+        }
+        if (gl) {
+            gl.clearColor(74 / 255, 115 / 255, 94 / 255, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            break;
+        }
+    }
+    return gl;
 }
 function resize(gl) {
     let realToCSSPixels = window.devicePixelRatio;
