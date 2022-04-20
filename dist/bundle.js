@@ -200,6 +200,17 @@ var YUE = (function (exports) {
         }
       }
     }, {
+      key: "bind",
+      value: function bind(target) {
+        var _this = this;
+
+        this.setData(target.data);
+
+        target.update = function (data) {
+          _this.setData(data);
+        };
+      }
+    }, {
       key: "getShaders",
       value: function getShaders() {
         return {
@@ -227,6 +238,32 @@ var YUE = (function (exports) {
     }, {
       key: "render",
       value: function render() {}
+    }, {
+      key: "setupBuffer",
+      value: function setupBuffer(bufferData, attrArray) {
+        var _this2 = this;
+
+        var gl = this.gl;
+        var buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.STATIC_DRAW);
+        attrArray.forEach(function (item) {
+          var name = item.name,
+              _item$size = item.size,
+              size = _item$size === void 0 ? 2 : _item$size,
+              _item$type = item.type,
+              type = _item$type === void 0 ? gl.FLOAT : _item$type,
+              _item$normalize = item.normalize,
+              normalize = _item$normalize === void 0 ? false : _item$normalize,
+              _item$stride = item.stride,
+              stride = _item$stride === void 0 ? 0 : _item$stride,
+              _item$offset = item.offset,
+              offset = _item$offset === void 0 ? 0 : _item$offset;
+          var position = gl.getAttribLocation(_this2.glProgram, name);
+          gl.enableVertexAttribArray(position);
+          gl.vertexAttribPointer(position, size, type, normalize, stride, offset);
+        });
+      }
     }]);
 
     return GL;
@@ -283,7 +320,7 @@ var YUE = (function (exports) {
     return gl;
   }
 
-  var vertShader$2 = "attribute vec3 aPos;attribute float aSize;attribute vec4 aColor;varying vec4 vColor;uniform vec2 u_resolution;void main(void){vec2 zeroToOne=aPos.xy/u_resolution;vec2 clipSpace=zeroToOne*2.0-1.0;gl_Position=vec4(clipSpace*vec2(1,-1),aPos.z,1.0);gl_PointSize=aSize;vColor=aColor;}";
+  var vertShader$2 = "attribute vec3 aPos;attribute float aSize;attribute vec4 aColor;varying vec4 vColor;uniform mat3 u_matrix;void main(void){gl_Position=vec4(u_matrix*vec3(aPos.xy,1.0),1.0);gl_PointSize=aSize;vColor=aColor;}";
 
   var fragShader$2 = "precision mediump float;varying vec4 vColor;void main(void){gl_FragColor=vColor;}";
 
@@ -2390,6 +2427,57 @@ var YUE = (function (exports) {
 
   var color = Color;
 
+  var m3 = {
+    translate: function translate(m, tx, ty) {
+      return m3.multiply(m, m3.translation(tx, ty));
+    },
+    rotate: function rotate(m, angleInRadians) {
+      return m3.multiply(m, m3.rotation(angleInRadians));
+    },
+    scale: function scale(m, sx, sy) {
+      return m3.multiply(m, m3.scaling(sx, sy));
+    },
+    translation: function translation(tx, ty) {
+      return [1, 0, 0, 0, 1, 0, tx, ty, 1];
+    },
+    rotation: function rotation(angleInRadians) {
+      var c = Math.cos(angleInRadians);
+      var s = Math.sin(angleInRadians);
+      return [c, -s, 0, s, c, 0, 0, 0, 1];
+    },
+    scaling: function scaling(sx, sy) {
+      return [sx, 0, 0, 0, sy, 0, 0, 0, 1];
+    },
+    projection: function projection(width, height) {
+      // 注意：这个矩阵翻转了 Y 轴，所以 0 在上方
+      return [2 / width, 0, 0, 0, -2 / height, 0, -1, 1, 1];
+    },
+    identity: function identity() {
+      return [1, 0, 0, 0, 1, 0, 0, 0, 1];
+    },
+    multiply: function multiply(a, b) {
+      var a00 = a[0 * 3 + 0];
+      var a01 = a[0 * 3 + 1];
+      var a02 = a[0 * 3 + 2];
+      var a10 = a[1 * 3 + 0];
+      var a11 = a[1 * 3 + 1];
+      var a12 = a[1 * 3 + 2];
+      var a20 = a[2 * 3 + 0];
+      var a21 = a[2 * 3 + 1];
+      var a22 = a[2 * 3 + 2];
+      var b00 = b[0 * 3 + 0];
+      var b01 = b[0 * 3 + 1];
+      var b02 = b[0 * 3 + 2];
+      var b10 = b[1 * 3 + 0];
+      var b11 = b[1 * 3 + 1];
+      var b12 = b[1 * 3 + 2];
+      var b20 = b[2 * 3 + 0];
+      var b21 = b[2 * 3 + 1];
+      var b22 = b[2 * 3 + 2];
+      return [b00 * a00 + b01 * a10 + b02 * a20, b00 * a01 + b01 * a11 + b02 * a21, b00 * a02 + b01 * a12 + b02 * a22, b10 * a00 + b11 * a10 + b12 * a20, b10 * a01 + b11 * a11 + b12 * a21, b10 * a02 + b11 * a12 + b12 * a22, b20 * a00 + b21 * a10 + b22 * a20, b20 * a01 + b21 * a11 + b22 * a21, b20 * a02 + b21 * a12 + b22 * a22];
+    }
+  };
+
   function _createSuper$2(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$2(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
 
   function _isNativeReflectConstruct$2() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
@@ -2436,14 +2524,13 @@ var YUE = (function (exports) {
               _color2$ = _color2[3],
               a = _color2$ === void 0 ? 1 : _color2$;
 
-          console.log(color$1);
           colorData.push(r, g, b, a * 255);
         });
         this.setupVertexBuffer(vertexData);
         this.setupColorBuffer(colorData);
-        var resolutionUniformLocation = this.gl.getUniformLocation(this.glProgram, 'u_resolution'); // 设置全局变量 分辨率
-
-        this.gl.uniform2f(resolutionUniformLocation, this.gl.canvas.width, this.gl.canvas.height);
+        var matrix = m3.projection(this.canvas.clientWidth, this.canvas.clientHeight);
+        var matrixUniformLocation = this.gl.getUniformLocation(this.glProgram, 'u_matrix');
+        this.gl.uniformMatrix3fv(matrixUniformLocation, false, matrix);
       }
     }, {
       key: "setupVertexBuffer",
@@ -2471,35 +2558,11 @@ var YUE = (function (exports) {
         }]);
       }
     }, {
-      key: "setupBuffer",
-      value: function setupBuffer(bufferData, attrArray) {
-        var _this = this;
-
-        var gl = this.gl;
-        var buffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-        gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.STATIC_DRAW);
-        attrArray.forEach(function (item) {
-          var name = item.name,
-              _item$size = item.size,
-              size = _item$size === void 0 ? 2 : _item$size,
-              _item$type = item.type,
-              type = _item$type === void 0 ? gl.FLOAT : _item$type,
-              _item$normalize = item.normalize,
-              normalize = _item$normalize === void 0 ? false : _item$normalize,
-              _item$stride = item.stride,
-              stride = _item$stride === void 0 ? 0 : _item$stride,
-              _item$offset = item.offset,
-              offset = _item$offset === void 0 ? 0 : _item$offset;
-          var position = gl.getAttribLocation(_this.glProgram, name);
-          gl.enableVertexAttribArray(position);
-          gl.vertexAttribPointer(position, size, type, normalize, stride, offset);
-        });
-      }
-    }, {
       key: "render",
       value: function render() {
-        var gl = this.gl;
+        var gl = this.gl; // Clear the canvas.
+
+        this.gl.clear(gl.COLOR_BUFFER_BIT);
         var primitiveType = gl.POINTS; // 绘制类型
 
         var offset = 0; // 从缓冲读取时的偏移量
@@ -2543,8 +2606,7 @@ var YUE = (function (exports) {
       key: "add",
       value: function add(instance) {
         this.instances.push(instance);
-        instance.initialize(this.canvas);
-        instance.render();
+        instance.initialize(this.canvas); // instance.render();
       }
     }, {
       key: "remove",
@@ -2777,6 +2839,8 @@ var YUE = (function (exports) {
   }
   /**
    * Generates a perspective projection matrix with the given bounds.
+   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
+   * which matches WebGL/OpenGL's clip volume.
    * Passing null/undefined/no value for far will generate infinite projection matrix.
    *
    * @param {mat4} out mat4 frustum matrix will be written into
@@ -2787,7 +2851,7 @@ var YUE = (function (exports) {
    * @returns {mat4} out
    */
 
-  function perspective(out, fovy, aspect, near, far) {
+  function perspectiveNO(out, fovy, aspect, near, far) {
     var f = 1.0 / Math.tan(fovy / 2),
         nf;
     out[0] = f / aspect;
@@ -2816,6 +2880,12 @@ var YUE = (function (exports) {
 
     return out;
   }
+  /**
+   * Alias for {@link mat4.perspectiveNO}
+   * @function
+   */
+
+  var perspective = perspectiveNO;
 
   var vertShader$1 = "attribute vec3 aPos;attribute vec3 aColor;varying vec3 vColor;uniform mat4 uMVMatrix;uniform mat4 uPMatrix;void main(void){gl_Position=uPMatrix*uMVMatrix*vec4(aPos,1);vColor=aColor;}";
 
@@ -3887,33 +3957,60 @@ var YUE = (function (exports) {
         size: 5
       });
 
+      _defineProperty(this, "update", function () {});
+
       this.opts = Object.assign(this.opts, options);
     }
 
     _createClass(Point, [{
+      key: "data",
+      get: function get() {
+        return this.opts;
+      }
+    }, {
       key: "x",
       get: function get() {
         return this.opts.x;
+      },
+      set: function set(value) {
+        this.opts.x = value;
+        this.update(this.opts);
       }
     }, {
       key: "y",
       get: function get() {
         return this.opts.y;
+      },
+      set: function set(value) {
+        this.opts.y = value;
+        this.update(this.opts);
       }
     }, {
       key: "z",
       get: function get() {
         return this.opts.z;
+      },
+      set: function set(value) {
+        this.opts.z = value;
+        this.update(this.opts);
       }
     }, {
       key: "size",
       get: function get() {
         return this.opts.size;
+      },
+      set: function set(value) {
+        this.opts.size = value;
+        this.update(this.opts);
       }
     }, {
       key: "color",
       get: function get() {
         return this.opts.color;
+      },
+      set: function set(value) {
+        this.opts.color = value;
+        this.update(this.opts);
       }
     }]);
 

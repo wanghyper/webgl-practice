@@ -25,6 +25,13 @@ export default class GL {
         }
     }
 
+    bind(target) {
+        this.setData(target.data);
+        target.update = data => {
+            this.setData(data);
+        };
+    }
+
     getShaders() {
         return {
             vs_source: '',
@@ -41,6 +48,26 @@ export default class GL {
     }
     destroy() {}
     render() {}
+    setupBuffer(bufferData, attrArray) {
+        const gl = this.gl;
+        let buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.STATIC_DRAW);
+        attrArray.forEach(item => {
+            let {
+                name,
+                size = 2, // 每次迭代运行提取两个单位数据
+                type = gl.FLOAT, // 每个单位的数据类型是32位浮点型
+                normalize = false, // 不需要归一化数据
+                stride = 0, // 0 = 移动单位数量 * 每个单位占用内存（sizeof(type)）
+                // 每次迭代运行运动多少内存到下一个数据开始点
+                offset = 0, // 从缓冲起始位置开始读取
+            } = item;
+            let position = gl.getAttribLocation(this.glProgram, name);
+            gl.enableVertexAttribArray(position);
+            gl.vertexAttribPointer(position, size, type, normalize, stride, offset);
+        });
+    }
 }
 // 创建着色器 参数：gl上下文，着色器内容，类型
 function createShader(gl, src, type) {

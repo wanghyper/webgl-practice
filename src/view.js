@@ -22,7 +22,7 @@ export default class View {
     add(instance) {
         this.instances.push(instance);
         instance.initialize(this.canvas);
-        instance.render();
+        // instance.render();
     }
 
     remove(instance) {

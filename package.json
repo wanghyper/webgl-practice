@@ -18,7 +18,7 @@
     "babel-eslint": "^10.1.0",
     "color": "^4.2.1",
     "eslint": "^7.27.0",
-    "gl-matrix": "^3.3.0",
+    "gl-matrix": "^3.4.3",
     "gulp": "^4.0.2",
     "rollup": "^2.40.0",
     "rollup-plugin-commonjs": "^10.1.0",
