@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>几何体</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+            }
+            #container {
+                width: 300px;
+                height: 200px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <script src="../dist/bundle.js"></script>
+
+        <script>
+            const container = document.getElementById('container');
+            const view = new YUE.View(container);
+            const geometryLayer = new YUE.GeometryLayer();
+            view.add(geometryLayer);
+
+            const geo1 = new YUE.Geometry(
+                [
+                    [10, 10, 0],
+                    [50, 50, 0],
+                    [50, 10, 0],
+                ],
+                ['red', 'green', 'blue']
+            );
+
+            const geo2 = new YUE.Geometry(
+                [
+                    [50, 50, 0],
+                    [50, 150, 0],
+                    [200, 50, 0],
+
+                    [200, 50, 0],
+                    [50, 150, 0],
+                    [200, 150, 0],
+
+                    [200, 50, 0],
+                    [200, 50, 50],
+                    [200, 150, 50],
+                ],
+                ['red', 'red', 'red', 'green', 'green', 'green']
+            );
+            geometryLayer.setData([geo1, geo2]);
+
+            // const pointLayer = new YUE.PointLayer();
+            // view.add(pointLayer);
+
+            // const point1 = new YUE.Point({size: 20, x: 100, y: 80, color: '#ff00ddaa'});
+            // const point2 = new YUE.Point({size: 10, x: 120, y: 120, color: '#ff0', style: 'round'});
+            // pointLayer.bind([point1, point2]);
+        </script>
+    </body>
+</html>

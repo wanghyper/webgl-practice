@@ -5,6 +5,7 @@ export default class Point {
         z: 0,
         color: '#000000ff',
         size: 5,
+        style: 'rect',
     };
     update = function () {};
     constructor(options) {

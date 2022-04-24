@@ -1,49 +1,45 @@
-import GL from '../base';
+import BaseLayer from '../base';
 import vertShader from './vert.glsl';
 import fragShader from './frag.glsl';
 import Color from 'color';
-import {m3} from '../transform/utils';
-export default class PointLayer extends GL {
+export default class PointLayer extends BaseLayer {
+    vertText = vertShader;
+    fragText = fragShader;
+    bufferData = [];
     constructor(container, options) {
         super(container, options);
     }
-    getShaders() {
-        return {
-            vs_source: vertShader,
-            fs_source: fragShader,
-        };
-    }
-    init() {
-        let data = this.data;
+
+    processData() {
         let vertexData = [];
         let colorData = [];
-        data.forEach(point => {
-            let {x, y, z, color, size} = point;
-            vertexData.push(x, y, z, size);
+        this.data.forEach(point => {
+            let {x, y, z, color, size, style} = point.data;
+            vertexData.push(x, y, z, size, style === 'rect' ? 1 : 0);
             color = Color(color).array();
             let [r, g, b, a = 1] = color;
             colorData.push(r, g, b, a * 255);
         });
-        this.setupVertexBuffer(vertexData);
-        this.setupColorBuffer(colorData);
-        let matrix = m3.projection(this.canvas.clientWidth, this.canvas.clientHeight);
-        let matrixUniformLocation = this.gl.getUniformLocation(this.glProgram, 'u_matrix');
-        this.gl.uniformMatrix3fv(matrixUniformLocation, false, matrix);
+        this.vertexData = vertexData;
+        this.colorData = colorData;
+        this.bindBuffer();
     }
-    setupVertexBuffer(data) {
+    bindBuffer() {
+        this.bufferData = [];
         let byteLength = Float32Array.BYTES_PER_ELEMENT;
-        this.setupBuffer(new Float32Array(data), [
-            {name: 'aPos', size: 3, stride: byteLength * 4},
-            {name: 'aSize', size: 1, stride: byteLength * 4, offset: byteLength * 3},
+        let stride = byteLength * 5;
+        this.bufferData.push(new Float32Array(this.vertexData), [
+            {name: 'aPos', size: 3, stride: stride},
+            {name: 'aSize', size: 1, stride: stride, offset: byteLength * 3},
+            {name: 'aStyle', size: 1, stride: stride, offset: byteLength * 4},
         ]);
-    }
-    setupColorBuffer(data) {
-        this.setupBuffer(new Uint8Array(data), [
+
+        this.bufferData.push(new Uint8Array(this.colorData), [
             {name: 'aColor', size: 4, type: this.gl.UNSIGNED_BYTE, normalize: true},
         ]);
     }
 
-    render() {
+    draw() {
         let gl = this.gl;
         // Clear the canvas.
         this.gl.clear(gl.COLOR_BUFFER_BIT);

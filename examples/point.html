@@ -25,7 +25,14 @@
         const pointLayer = new YUE.PointLayer();
         view.add(pointLayer);
 
-        const point = new YUE.Point({size: 20, x: 100, y: 100, color: '#ff00ddaa'});
-        pointLayer.bind(point);
+        const point1 = new YUE.Point({size: 20, x: 100, y: 80, color: '#ff00ddaa'});
+        const point2 = new YUE.Point({size: 30, x: 120, y: 120, color: '#ff0', style: 'round'});
+        pointLayer.setData([point1, point2]);
+
+        setTimeout(() => {
+            point1.color = '#000000';
+            point1.x += 20;
+            point2.size = 15;
+        }, 3000)
     </script>
 </html>

@@ -1,3 +1,4 @@
+import {getGLContext} from './gl';
 export default class View {
     instances = [];
     constructor(element, options) {
@@ -17,12 +18,19 @@ export default class View {
         // this.canvas.style.width = width;
         // this.canvas.style.height = height;
         element.appendChild(this.canvas);
+        this.gl = getGLContext(this.canvas);
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        window.addEventListener('resize', () => {
+            console.log('resize');
+        });
     }
 
     add(instance) {
         this.instances.push(instance);
-        instance.initialize(this.canvas);
-        // instance.render();
+        instance.initialize(this.canvas, this.gl);
     }
 
     remove(instance) {
