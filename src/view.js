@@ -15,7 +15,7 @@ export default class View {
         let height = element.clientHeight;
         this.canvas.width = width;
         this.canvas.height = height;
-        // this.canvas.style.width = width;
+        this.canvas.style.background = 'transparent';
         // this.canvas.style.height = height;
         element.appendChild(this.canvas);
         this.gl = getGLContext(this.canvas);
@@ -39,5 +39,11 @@ export default class View {
             this.instances.splice(index, 1);
             instance.destroy();
         }
+    }
+
+    render() {
+        this.instances.forEach(instance => {
+            instance.render();
+        });
     }
 }

@@ -173,7 +173,7 @@ var YUE = (function (exports) {
       }
 
       if (gl) {
-        gl.clearColor(74 / 255, 115 / 255, 94 / 255, 1.0);
+        gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.viewport(0, 0, canvas.width, canvas.height);
         break;
@@ -272,87 +272,6 @@ var YUE = (function (exports) {
     return out;
   }
   /**
-   * Set a mat4 to the identity matrix
-   *
-   * @param {mat4} out the receiving matrix
-   * @returns {mat4} out
-   */
-
-  function identity(out) {
-    out[0] = 1;
-    out[1] = 0;
-    out[2] = 0;
-    out[3] = 0;
-    out[4] = 0;
-    out[5] = 1;
-    out[6] = 0;
-    out[7] = 0;
-    out[8] = 0;
-    out[9] = 0;
-    out[10] = 1;
-    out[11] = 0;
-    out[12] = 0;
-    out[13] = 0;
-    out[14] = 0;
-    out[15] = 1;
-    return out;
-  }
-  /**
-   * Translate a mat4 by the given vector
-   *
-   * @param {mat4} out the receiving matrix
-   * @param {ReadonlyMat4} a the matrix to translate
-   * @param {ReadonlyVec3} v vector to translate by
-   * @returns {mat4} out
-   */
-
-  function translate(out, a, v) {
-    var x = v[0],
-        y = v[1],
-        z = v[2];
-    var a00, a01, a02, a03;
-    var a10, a11, a12, a13;
-    var a20, a21, a22, a23;
-
-    if (a === out) {
-      out[12] = a[0] * x + a[4] * y + a[8] * z + a[12];
-      out[13] = a[1] * x + a[5] * y + a[9] * z + a[13];
-      out[14] = a[2] * x + a[6] * y + a[10] * z + a[14];
-      out[15] = a[3] * x + a[7] * y + a[11] * z + a[15];
-    } else {
-      a00 = a[0];
-      a01 = a[1];
-      a02 = a[2];
-      a03 = a[3];
-      a10 = a[4];
-      a11 = a[5];
-      a12 = a[6];
-      a13 = a[7];
-      a20 = a[8];
-      a21 = a[9];
-      a22 = a[10];
-      a23 = a[11];
-      out[0] = a00;
-      out[1] = a01;
-      out[2] = a02;
-      out[3] = a03;
-      out[4] = a10;
-      out[5] = a11;
-      out[6] = a12;
-      out[7] = a13;
-      out[8] = a20;
-      out[9] = a21;
-      out[10] = a22;
-      out[11] = a23;
-      out[12] = a00 * x + a10 * y + a20 * z + a[12];
-      out[13] = a01 * x + a11 * y + a21 * z + a[13];
-      out[14] = a02 * x + a12 * y + a22 * z + a[14];
-      out[15] = a03 * x + a13 * y + a23 * z + a[15];
-    }
-
-    return out;
-  }
-  /**
    * Rotates a mat4 by the given angle around the given axis
    *
    * @param {mat4} out the receiving matrix
@@ -433,58 +352,7 @@ var YUE = (function (exports) {
     return out;
   }
   /**
-   * Generates a perspective projection matrix with the given bounds.
-   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
-   * which matches WebGL/OpenGL's clip volume.
-   * Passing null/undefined/no value for far will generate infinite projection matrix.
-   *
-   * @param {mat4} out mat4 frustum matrix will be written into
-   * @param {number} fovy Vertical field of view in radians
-   * @param {number} aspect Aspect ratio. typically viewport width/height
-   * @param {number} near Near bound of the frustum
-   * @param {number} far Far bound of the frustum, can be null or Infinity
-   * @returns {mat4} out
-   */
-
-  function perspectiveNO(out, fovy, aspect, near, far) {
-    var f = 1.0 / Math.tan(fovy / 2),
-        nf;
-    out[0] = f / aspect;
-    out[1] = 0;
-    out[2] = 0;
-    out[3] = 0;
-    out[4] = 0;
-    out[5] = f;
-    out[6] = 0;
-    out[7] = 0;
-    out[8] = 0;
-    out[9] = 0;
-    out[11] = -1;
-    out[12] = 0;
-    out[13] = 0;
-    out[15] = 0;
-
-    if (far != null && far !== Infinity) {
-      nf = 1 / (near - far);
-      out[10] = (far + near) * nf;
-      out[14] = 2 * far * near * nf;
-    } else {
-      out[10] = -1;
-      out[14] = -2 * near;
-    }
-
-    return out;
-  }
-  /**
-   * Alias for {@link mat4.perspectiveNO}
-   * @function
-   */
-
-  var perspective = perspectiveNO;
-  /**
-   * Generates a orthogonal projection matrix with the given bounds.
-   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
-   * which matches WebGL/OpenGL's clip volume.
+   * Generates a orthogonal projection matrix with the given bounds
    *
    * @param {mat4} out mat4 frustum matrix will be written into
    * @param {number} left Left bound of the frustum
@@ -496,7 +364,7 @@ var YUE = (function (exports) {
    * @returns {mat4} out
    */
 
-  function orthoNO(out, left, right, bottom, top, near, far) {
+  function ortho(out, left, right, bottom, top, near, far) {
     var lr = 1 / (left - right);
     var bt = 1 / (bottom - top);
     var nf = 1 / (near - far);
@@ -518,12 +386,6 @@ var YUE = (function (exports) {
     out[15] = 1;
     return out;
   }
-  /**
-   * Alias for {@link mat4.orthoNO}
-   * @function
-   */
-
-  var ortho = orthoNO;
 
   var BaseLayer = /*#__PURE__*/function () {
     function BaseLayer(options) {
@@ -564,26 +426,16 @@ var YUE = (function (exports) {
         };
       }
     }, {
-      key: "bind",
-      value: function bind(target) {
+      key: "update",
+      value: function update() {
         var _this = this;
 
-        if (Array.isArray(target)) {
-          target.forEach(function (item) {
-            item.update = function () {
-              _this.setDataAsync(target);
-            };
-          });
-        } else {
-          target.update = function () {
-            _this.setDataAsync(target);
-          };
+        window.cancelAnimationFrame(this.setDataTimer);
+        this.setDataTimer = window.requestAnimationFrame(function () {
+          _this.processData();
 
-          target = [target];
-        }
-
-        this.init();
-        this.setData(target);
+          _this.render();
+        });
       }
     }, {
       key: "setData",
@@ -593,18 +445,7 @@ var YUE = (function (exports) {
         }
 
         this.data = data;
-        this.processData();
-        this.render();
-      }
-    }, {
-      key: "setDataAsync",
-      value: function setDataAsync(data) {
-        var _this2 = this;
-
-        window.cancelAnimationFrame(this.setDataTimer);
-        this.setDataTimer = window.requestAnimationFrame(function () {
-          _this2.setData(data);
-        });
+        this.update();
       }
     }, {
       key: "destroy",
@@ -612,17 +453,14 @@ var YUE = (function (exports) {
     }, {
       key: "setBuffersAndAttributes",
       value: function setBuffersAndAttributes() {
-        var _this3 = this;
+        var _this2 = this;
 
         var gl = this.gl;
-
-        for (var i = 0; i < this.bufferData.length; i += 2) {
-          var bufferData = this.bufferData[i];
-          var attrArray = this.bufferData[i + 1];
-          var buffer = gl.createBuffer();
+        this.bufferData.forEach(function (item) {
+          var buffer = item.buffer,
+              attributes = item.attributes;
           gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-          gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.STATIC_DRAW);
-          attrArray.forEach(function (item) {
+          attributes.forEach(function (item) {
             var name = item.name,
                 _item$size = item.size,
                 size = _item$size === void 0 ? 2 : _item$size,
@@ -634,19 +472,21 @@ var YUE = (function (exports) {
                 stride = _item$stride === void 0 ? 0 : _item$stride,
                 _item$offset = item.offset,
                 offset = _item$offset === void 0 ? 0 : _item$offset;
-            var position = gl.getAttribLocation(_this3.glProgram, name);
+            var position = gl.getAttribLocation(_this2.glProgram, name);
             gl.enableVertexAttribArray(position);
             gl.vertexAttribPointer(position, size, type, normalize, stride, offset);
           });
-        }
+        });
       }
     }, {
       key: "render",
       value: function render() {
-        this.gl.useProgram(this.glProgram);
+        var gl = this.gl;
+        gl.useProgram(this.glProgram);
         this.setBuffersAndAttributes();
-        var matrixUniformLocation = this.gl.getUniformLocation(this.glProgram, 'u_matrix');
-        this.gl.uniformMatrix4fv(matrixUniformLocation, false, this.projectionMatrix);
+        var matrixUniformLocation = gl.getUniformLocation(this.glProgram, 'u_matrix');
+        gl.uniformMatrix4fv(matrixUniformLocation, false, this.projectionMatrix); // gl.clear(gl.COLOR_BUFFER_BIT);
+
         this.draw();
       }
     }]);
@@ -654,9 +494,9 @@ var YUE = (function (exports) {
     return BaseLayer;
   }();
 
-  var vertShader$3 = "attribute vec3 aPos;attribute float aSize;attribute vec4 aColor;attribute float aStyle;varying vec4 vColor;varying float vStyle;uniform mat4 u_matrix;void main(void){gl_Position=u_matrix*vec4(aPos,1.0);gl_PointSize=aSize;vStyle=aStyle;vColor=aColor;}";
+  var vertShader$2 = "attribute vec3 aPos;attribute float aSize;attribute vec4 aColor;attribute float aStyle;varying vec4 vColor;varying float vStyle;uniform mat4 u_matrix;void main(void){gl_Position=u_matrix*vec4(aPos,1.0);gl_PointSize=aSize;vStyle=aStyle;vColor=aColor;}";
 
-  var fragShader$3 = "precision mediump float;varying vec4 vColor;varying float vStyle;void main(){if(vStyle!=1.0){if(distance(gl_PointCoord,vec2(0.5,0.5))>0.5){discard;}}gl_FragColor=vColor;}";
+  var fragShader$2 = "precision mediump float;varying vec4 vColor;varying float vStyle;void main(){if(vStyle!=1.0){if(distance(gl_PointCoord,vec2(0.5,0.5))>0.5){discard;}}gl_FragColor=vColor;}";
 
   function createCommonjsModule(fn, module) {
   	return module = { exports: {} }, fn(module, module.exports), module.exports;
@@ -2761,14 +2601,14 @@ var YUE = (function (exports) {
 
   var color = Color;
 
-  function _createSuper$3(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$3(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+  function _createSuper$2(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$2(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
 
-  function _isNativeReflectConstruct$3() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+  function _isNativeReflectConstruct$2() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
 
   var PointLayer = /*#__PURE__*/function (_BaseLayer) {
     _inherits(PointLayer, _BaseLayer);
 
-    var _super = _createSuper$3(PointLayer);
+    var _super = _createSuper$2(PointLayer);
 
     function PointLayer(container, options) {
       var _this;
@@ -2777,9 +2617,9 @@ var YUE = (function (exports) {
 
       _this = _super.call(this, container, options);
 
-      _defineProperty(_assertThisInitialized(_this), "vertText", vertShader$3);
+      _defineProperty(_assertThisInitialized(_this), "vertText", vertShader$2);
 
-      _defineProperty(_assertThisInitialized(_this), "fragText", fragShader$3);
+      _defineProperty(_assertThisInitialized(_this), "fragText", fragShader$2);
 
       _defineProperty(_assertThisInitialized(_this), "bufferData", []);
 
@@ -2819,37 +2659,52 @@ var YUE = (function (exports) {
     }, {
       key: "bindBuffer",
       value: function bindBuffer() {
+        var gl = this.gl;
         this.bufferData = [];
         var byteLength = Float32Array.BYTES_PER_ELEMENT;
         var stride = byteLength * 5;
-        this.bufferData.push(new Float32Array(this.vertexData), [{
-          name: 'aPos',
-          size: 3,
-          stride: stride
-        }, {
-          name: 'aSize',
-          size: 1,
-          stride: stride,
-          offset: byteLength * 3
-        }, {
-          name: 'aStyle',
-          size: 1,
-          stride: stride,
-          offset: byteLength * 4
-        }]);
-        this.bufferData.push(new Uint8Array(this.colorData), [{
-          name: 'aColor',
-          size: 4,
-          type: this.gl.UNSIGNED_BYTE,
-          normalize: true
-        }]);
+        var vertBuffer = gl.createBuffer();
+        var vertBufferData = new Float32Array(this.vertexData);
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertBufferData, gl.STATIC_DRAW);
+        this.bufferData.push({
+          buffer: vertBuffer,
+          data: vertBufferData,
+          attributes: [{
+            name: 'aPos',
+            size: 3,
+            stride: stride
+          }, {
+            name: 'aSize',
+            size: 1,
+            stride: stride,
+            offset: byteLength * 3
+          }, {
+            name: 'aStyle',
+            size: 1,
+            stride: stride,
+            offset: byteLength * 4
+          }]
+        });
+        var colorBuffer = gl.createBuffer();
+        var colorBufferData = new Uint8Array(this.colorData);
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, colorBufferData, gl.STATIC_DRAW);
+        this.bufferData.push({
+          buffer: colorBuffer,
+          data: colorBufferData,
+          attributes: [{
+            name: 'aColor',
+            size: 4,
+            type: this.gl.UNSIGNED_BYTE,
+            normalize: true
+          }]
+        });
       }
     }, {
       key: "draw",
       value: function draw() {
-        var gl = this.gl; // Clear the canvas.
-
-        this.gl.clear(gl.COLOR_BUFFER_BIT);
+        var gl = this.gl;
         var primitiveType = gl.POINTS; // 绘制类型
 
         var offset = 0; // 从缓冲读取时的偏移量
@@ -2863,18 +2718,18 @@ var YUE = (function (exports) {
     return PointLayer;
   }(BaseLayer);
 
-  var vertShader$2 = "attribute vec3 aPos;attribute vec4 aColor;varying vec4 vColor;uniform mat4 u_matrix;void main(void){gl_Position=u_matrix*vec4(aPos,1.0);vColor=aColor;}";
+  var vertShader$1 = "attribute vec3 aPos;attribute vec4 aColor;varying vec4 vColor;uniform mat4 u_matrix;void main(void){gl_Position=u_matrix*vec4(aPos,1.0);vColor=aColor;}";
 
-  var fragShader$2 = "precision mediump float;varying vec4 vColor;void main(void){gl_FragColor=vColor;}";
+  var fragShader$1 = "precision mediump float;varying vec4 vColor;void main(void){gl_FragColor=vColor;}";
 
-  function _createSuper$2(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$2(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+  function _createSuper$1(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$1(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
 
-  function _isNativeReflectConstruct$2() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+  function _isNativeReflectConstruct$1() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
 
   var GeometryLayer = /*#__PURE__*/function (_BaseLayer) {
     _inherits(GeometryLayer, _BaseLayer);
 
-    var _super = _createSuper$2(GeometryLayer);
+    var _super = _createSuper$1(GeometryLayer);
 
     function GeometryLayer(options) {
       var _this;
@@ -2889,9 +2744,9 @@ var YUE = (function (exports) {
 
       _defineProperty(_assertThisInitialized(_this), "colorData", []);
 
-      _defineProperty(_assertThisInitialized(_this), "vertText", vertShader$2);
+      _defineProperty(_assertThisInitialized(_this), "vertText", vertShader$1);
 
-      _defineProperty(_assertThisInitialized(_this), "fragText", fragShader$2);
+      _defineProperty(_assertThisInitialized(_this), "fragText", fragShader$1);
 
       return _this;
     }
@@ -2905,12 +2760,11 @@ var YUE = (function (exports) {
         var colorData = [];
         this.pointsLength = 0;
         this.data.forEach(function (geometry) {
-          var vertecies = geometry.vertexData;
-          var colors = geometry.colorData;
-          vertecies.forEach(function (vertex, index) {
+          var vertecies = geometry.data;
+          vertecies.forEach(function (vertex) {
             vertexData.push(vertex[0], vertex[1], vertex[2]);
             _this2.pointsLength++;
-            var color$1 = colors[index] || '#000';
+            var color$1 = vertex[3] || '#000';
             color$1 = color(color$1).array();
 
             var _color = color$1,
@@ -2931,31 +2785,45 @@ var YUE = (function (exports) {
     }, {
       key: "bindBuffer",
       value: function bindBuffer() {
+        var gl = this.gl;
         this.bufferData = [];
-        this.bufferData.push(new Float32Array(this.vertexData), [{
-          name: 'aPos',
-          size: 3
-        }]);
-        this.bufferData.push(new Uint8Array(this.colorData), [{
-          name: 'aColor',
-          size: 4,
-          type: this.gl.UNSIGNED_BYTE,
-          normalize: true
-        }]);
+        var vertBuffer = gl.createBuffer();
+        var vertBufferData = new Float32Array(this.vertexData);
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertBufferData, gl.STATIC_DRAW);
+        this.bufferData.push({
+          buffer: vertBuffer,
+          data: vertBufferData,
+          attributes: [{
+            name: 'aPos',
+            size: 3
+          }]
+        });
+        var colorBuffer = gl.createBuffer();
+        var colorBufferData = new Uint8Array(this.colorData);
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, colorBufferData, gl.STATIC_DRAW);
+        this.bufferData.push({
+          buffer: colorBuffer,
+          data: colorBufferData,
+          attributes: [{
+            name: 'aColor',
+            size: 4,
+            type: this.gl.UNSIGNED_BYTE,
+            normalize: true
+          }]
+        });
       }
     }, {
       key: "draw",
       value: function draw() {
-        var gl = this.gl; // Clear the canvas.
-
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        var gl = this.gl;
         var primitiveType = gl.TRIANGLES; // 绘制类型
 
         var offset = 0; // 从缓冲读取时的偏移量
 
         var count = this.pointsLength; // 着色器运行次数
 
-        console.log(this.pointsLength);
         gl.drawArrays(primitiveType, offset, count);
       }
     }]);
@@ -2983,8 +2851,8 @@ var YUE = (function (exports) {
       var width = element.clientWidth;
       var height = element.clientHeight;
       this.canvas.width = width;
-      this.canvas.height = height; // this.canvas.style.width = width;
-      // this.canvas.style.height = height;
+      this.canvas.height = height;
+      this.canvas.style.background = 'transparent'; // this.canvas.style.height = height;
 
       element.appendChild(this.canvas);
       this.gl = getGLContext(this.canvas);
@@ -3014,104 +2882,17 @@ var YUE = (function (exports) {
           instance.destroy();
         }
       }
+    }, {
+      key: "render",
+      value: function render() {
+        this.instances.forEach(function (instance) {
+          instance.render();
+        });
+      }
     }]);
 
     return View;
   }();
-
-  var vertShader$1 = "attribute vec3 aPos;attribute vec3 aColor;varying vec3 vColor;uniform mat4 uMVMatrix;uniform mat4 uPMatrix;void main(void){gl_Position=uPMatrix*uMVMatrix*vec4(aPos,1);vColor=aColor;}";
-
-  var fragShader$1 = "precision highp float;varying vec3 vColor;void main(void){gl_FragColor=vec4(vColor.rgb,1);}";
-
-  function _createSuper$1(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$1(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
-  function _isNativeReflectConstruct$1() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
-
-  var Perspective = /*#__PURE__*/function (_GL) {
-    _inherits(Perspective, _GL);
-
-    var _super = _createSuper$1(Perspective);
-
-    function Perspective(canvas) {
-      _classCallCheck(this, Perspective);
-
-      return _super.call(this, canvas);
-    }
-
-    _createClass(Perspective, [{
-      key: "getShaders",
-      value: function getShaders() {
-        return {
-          vs_source: vertShader$1,
-          fs_source: fragShader$1
-        };
-      }
-    }, {
-      key: "setupBuffer",
-      value: function setupBuffer() {
-        var gl = this.gl;
-        var glProgram = this.glProgram;
-        var cubicVertex = [// front vertex
-        -10, 0, 10, 10, 0, 10, 10, 20, 10, -10, 20, 10, // back vertex
-        -10, 0, -10, 10, 0, -10, 10, 20, -10, -10, 20, -10];
-        var vertexColor = [0.9, 0.5, 0.1, 0.4, 0.3, 0.1, 0.1, 0.3, 0.2, 0.4, 0.5, 0.7, 0.4, 0.9, 0.1, 0.2, 0.5, 0.5, 0.4, 0.6, 0.1, 0.4, 0.5, 0.8];
-        var vertexIndex = this.vertexIndex = [// front face
-        0, 1, 2, 0, 2, 3, // right face
-        1, 5, 6, 1, 6, 2, // back face
-        5, 4, 7, 5, 7, 6, // left face
-        4, 0, 3, 4, 3, 7, // top face
-        3, 2, 6, 3, 6, 7, // bottom face
-        4, 5, 1, 4, 1, 0];
-        var vertexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cubicVertex), gl.STATIC_DRAW);
-        var indexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(vertexIndex), gl.STATIC_DRAW);
-        var aVertexPosition = gl.getAttribLocation(glProgram, 'aPos');
-        gl.vertexAttribPointer(aVertexPosition, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aVertexPosition);
-        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-        var colorBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexColor), gl.STATIC_DRAW);
-        var aColorPosition = gl.getAttribLocation(glProgram, 'aColor');
-        gl.vertexAttribPointer(aColorPosition, 3, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(aColorPosition);
-      }
-    }, {
-      key: "render",
-      value: function render() {
-        var glProgram = this.glProgram;
-        var gl = this.gl;
-        glProgram.pMatrixUniform = gl.getUniformLocation(glProgram, 'uPMatrix');
-        glProgram.mvMatrixUniform = gl.getUniformLocation(glProgram, 'uMVMatrix');
-        var pMatrix = create();
-        var mvMatrix = create();
-        var _this$canvas = this.canvas,
-            width = _this$canvas.width,
-            height = _this$canvas.height;
-        var widthHeightRatio = width / height;
-        var fovy = 40;
-        var near = 10;
-        var far = 100;
-        perspective(pMatrix, toRadian(fovy), widthHeightRatio, near, far);
-        identity(mvMatrix);
-        translate(mvMatrix, mvMatrix, [0, -5, -70]);
-        rotate(mvMatrix, mvMatrix, toRadian(50), [0, 1, 0]);
-        gl.uniformMatrix4fv(glProgram.pMatrixUniform, false, pMatrix);
-        gl.uniformMatrix4fv(glProgram.mvMatrixUniform, false, mvMatrix);
-        this.setupBuffer();
-        gl.drawElements(gl.TRIANGLES, this.vertexIndex.length, gl.UNSIGNED_SHORT, 0);
-      }
-    }]);
-
-    return Perspective;
-  }(BaseLayer);
-
-  function toRadian(angle) {
-    return angle * Math.PI / 180;
-  }
 
   function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
     try {
@@ -4151,9 +3932,8 @@ var YUE = (function (exports) {
   }();
 
   var Geometry = function Geometry() {
-    var vertexData = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-    var colorData = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-    var options = arguments.length > 2 ? arguments[2] : undefined;
+    var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+    var options = arguments.length > 1 ? arguments[1] : undefined;
 
     _classCallCheck(this, Geometry);
 
@@ -4161,12 +3941,10 @@ var YUE = (function (exports) {
 
     _defineProperty(this, "update", function () {});
 
-    this.vertexData = vertexData;
-    this.colorData = colorData;
+    this.data = data;
     this.opts = options;
   };
 
-  exports.Camera = Perspective;
   exports.Geometry = Geometry;
   exports.GeometryLayer = GeometryLayer;
   exports.Point = Point;

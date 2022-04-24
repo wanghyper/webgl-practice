@@ -26,22 +26,12 @@ export default class BaseLayer {
             fs_source: '',
         };
     }
-
-    bind(target) {
-        if (Array.isArray(target)) {
-            target.forEach(item => {
-                item.update = () => {
-                    this.setDataAsync(target);
-                };
-            });
-        } else {
-            target.update = () => {
-                this.setDataAsync(target);
-            };
-            target = [target];
-        }
-        this.init();
-        this.setData(target);
+    update() {
+        window.cancelAnimationFrame(this.setDataTimer);
+        this.setDataTimer = window.requestAnimationFrame(() => {
+            this.processData();
+            this.render();
+        });
     }
 
     setData(data) {
@@ -49,27 +39,17 @@ export default class BaseLayer {
             data = [data];
         }
         this.data = data;
-        this.processData();
-        this.render();
-    }
-    setDataAsync(data) {
-        window.cancelAnimationFrame(this.setDataTimer);
-        this.setDataTimer = window.requestAnimationFrame(() => {
-            this.setData(data);
-        });
+        this.update();
     }
 
     destroy() {}
 
     setBuffersAndAttributes() {
         const gl = this.gl;
-        for (let i = 0; i < this.bufferData.length; i += 2) {
-            const bufferData = this.bufferData[i];
-            const attrArray = this.bufferData[i + 1];
-            let buffer = gl.createBuffer();
+        this.bufferData.forEach(item => {
+            let {buffer, attributes} = item;
             gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-            gl.bufferData(gl.ARRAY_BUFFER, bufferData, gl.STATIC_DRAW);
-            attrArray.forEach(item => {
+            attributes.forEach(item => {
                 let {
                     name,
                     size = 2, // 每次迭代运行提取两个单位数据
@@ -83,14 +63,17 @@ export default class BaseLayer {
                 gl.enableVertexAttribArray(position);
                 gl.vertexAttribPointer(position, size, type, normalize, stride, offset);
             });
-        }
+        });
     }
 
     render() {
-        this.gl.useProgram(this.glProgram);
+        const gl = this.gl;
+        gl.useProgram(this.glProgram);
         this.setBuffersAndAttributes();
-        let matrixUniformLocation = this.gl.getUniformLocation(this.glProgram, 'u_matrix');
-        this.gl.uniformMatrix4fv(matrixUniformLocation, false, this.projectionMatrix);
+        let matrixUniformLocation = gl.getUniformLocation(this.glProgram, 'u_matrix');
+        gl.uniformMatrix4fv(matrixUniformLocation, false, this.projectionMatrix);
+
+        // gl.clear(gl.COLOR_BUFFER_BIT);
         this.draw();
     }
 }

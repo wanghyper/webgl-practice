@@ -8,7 +8,7 @@ export function getGLContext(canvas) {
             console.error('get gl context failed', e);
         }
         if (gl) {
-            gl.clearColor(74 / 255, 115 / 255, 94 / 255, 1.0);
+            gl.clearColor(0, 0, 0, 0);
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.viewport(0, 0, canvas.width, canvas.height);
             break;

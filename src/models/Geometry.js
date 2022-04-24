@@ -1,9 +1,8 @@
 export default class Geometry {
     data = [];
     update = function () {};
-    constructor(vertexData = [], colorData = [], options) {
-        this.vertexData = vertexData;
-        this.colorData = colorData;
+    constructor(data = [], options) {
+        this.data = data;
         this.opts = options;
     }
 }

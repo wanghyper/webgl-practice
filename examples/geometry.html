@@ -26,39 +26,33 @@
             const geometryLayer = new YUE.GeometryLayer();
             view.add(geometryLayer);
 
-            const geo1 = new YUE.Geometry(
-                [
-                    [10, 10, 0],
-                    [50, 50, 0],
-                    [50, 10, 0],
-                ],
-                ['red', 'green', 'blue']
-            );
+            const geo1 = new YUE.Geometry([
+                [10, 10, 0, 'red'],
+                [50, 50, 0, 'green'],
+                [50, 10, 0, 'blue'],
+            ]);
 
-            const geo2 = new YUE.Geometry(
-                [
-                    [50, 50, 0],
-                    [50, 150, 0],
-                    [200, 50, 0],
+            const geo2 = new YUE.Geometry([
+                [50, 50, 0, 'red'],
+                [50, 150, 0, 'red'],
+                [200, 50, 0, 'red'],
 
-                    [200, 50, 0],
-                    [50, 150, 0],
-                    [200, 150, 0],
+                [200, 50, 0, 'green'],
+                [50, 150, 0, 'green'],
+                [200, 150, 0, 'green'],
 
-                    [200, 50, 0],
-                    [200, 50, 50],
-                    [200, 150, 50],
-                ],
-                ['red', 'red', 'red', 'green', 'green', 'green']
-            );
+                [200, 50, 0],
+                [200, 50, 50],
+                [200, 150, 50],
+            ]);
             geometryLayer.setData([geo1, geo2]);
 
-            // const pointLayer = new YUE.PointLayer();
-            // view.add(pointLayer);
+            const pointLayer = new YUE.PointLayer();
+            view.add(pointLayer);
 
-            // const point1 = new YUE.Point({size: 20, x: 100, y: 80, color: '#ff00ddaa'});
-            // const point2 = new YUE.Point({size: 10, x: 120, y: 120, color: '#ff0', style: 'round'});
-            // pointLayer.bind([point1, point2]);
+            const point1 = new YUE.Point({size: 20, x: 80, y: 180, color: '#ff00ddaa'});
+            const point2 = new YUE.Point({size: 10, x: 120, y: 120, color: '#ff0', style: 'round'});
+            pointLayer.setData([point1, point2]);
         </script>
     </body>
 </html>

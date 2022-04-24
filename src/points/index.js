@@ -25,24 +25,37 @@ export default class PointLayer extends BaseLayer {
         this.bindBuffer();
     }
     bindBuffer() {
+        const gl = this.gl;
         this.bufferData = [];
         let byteLength = Float32Array.BYTES_PER_ELEMENT;
         let stride = byteLength * 5;
-        this.bufferData.push(new Float32Array(this.vertexData), [
-            {name: 'aPos', size: 3, stride: stride},
-            {name: 'aSize', size: 1, stride: stride, offset: byteLength * 3},
-            {name: 'aStyle', size: 1, stride: stride, offset: byteLength * 4},
-        ]);
+        let vertBuffer = gl.createBuffer();
+        let vertBufferData = new Float32Array(this.vertexData);
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertBufferData, gl.STATIC_DRAW);
+        this.bufferData.push({
+            buffer: vertBuffer,
+            data: vertBufferData,
+            attributes: [
+                {name: 'aPos', size: 3, stride: stride},
+                {name: 'aSize', size: 1, stride: stride, offset: byteLength * 3},
+                {name: 'aStyle', size: 1, stride: stride, offset: byteLength * 4},
+            ],
+        });
 
-        this.bufferData.push(new Uint8Array(this.colorData), [
-            {name: 'aColor', size: 4, type: this.gl.UNSIGNED_BYTE, normalize: true},
-        ]);
+        let colorBuffer = gl.createBuffer();
+        let colorBufferData = new Uint8Array(this.colorData);
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, colorBufferData, gl.STATIC_DRAW);
+        this.bufferData.push({
+            buffer: colorBuffer,
+            data: colorBufferData,
+            attributes: [{name: 'aColor', size: 4, type: this.gl.UNSIGNED_BYTE, normalize: true}],
+        });
     }
 
     draw() {
         let gl = this.gl;
-        // Clear the canvas.
-        this.gl.clear(gl.COLOR_BUFFER_BIT);
         let primitiveType = gl.POINTS; // 绘制类型
         let offset = 0; // 从缓冲读取时的偏移量
         let count = this.data.length; // 着色器运行次数
