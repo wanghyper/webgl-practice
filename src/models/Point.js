@@ -1,4 +1,5 @@
-export default class Point {
+import CommonModel from './CommonModel';
+export default class Point extends CommonModel {
     opts = {
         x: 0,
         y: 0,
@@ -7,8 +8,8 @@ export default class Point {
         size: 5,
         style: 'rect',
     };
-    update = function () {};
     constructor(options) {
+        super(options);
         this.opts = Object.assign(this.opts, options);
     }
     get data() {
@@ -31,22 +32,22 @@ export default class Point {
     }
     set x(value) {
         this.opts.x = value;
-        this.update(this.opts);
+        this.update();
     }
     set y(value) {
         this.opts.y = value;
-        this.update(this.opts);
+        this.update();
     }
     set z(value) {
         this.opts.z = value;
-        this.update(this.opts);
+        this.update();
     }
     set size(value) {
         this.opts.size = value;
-        this.update(this.opts);
+        this.update();
     }
     set color(value) {
         this.opts.color = value;
-        this.update(this.opts);
+        this.update();
     }
 }

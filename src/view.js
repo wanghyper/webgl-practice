@@ -31,6 +31,7 @@ export default class View {
     add(instance) {
         this.instances.push(instance);
         instance.initialize(this.canvas, this.gl);
+        instance.setView(this);
     }
 
     remove(instance) {

@@ -14,9 +14,33 @@
                 width: 300px;
                 height: 200px;
             }
+            canvas {
+                border: 1px solid #000;
+            }
+            .panel {
+                padding: 10px;
+                font-size: 12px;
+            }
+            label {
+                line-height: 16px;
+            }
+            input[type='range'] {
+                margin: 0;
+                vertical-align: bottom;
+            }
         </style>
     </head>
     <body>
+        <div class="panel">
+            <label>
+                平移
+                <input type="range" value="0" id="translate" max="200" />
+            </label>
+            <label>
+                旋转
+                <input type="range" value="0" id="rotate" />
+            </label>
+        </div>
         <div id="container"></div>
         <script src="../dist/bundle.js"></script>
 
@@ -45,14 +69,14 @@
                 [200, 50, 50],
                 [200, 150, 50],
             ]);
-            geometryLayer.setData([geo1, geo2]);
+            geometryLayer.bind([geo1, geo2]);
 
-            const pointLayer = new YUE.PointLayer();
-            view.add(pointLayer);
-
-            const point1 = new YUE.Point({size: 20, x: 80, y: 180, color: '#ff00ddaa'});
-            const point2 = new YUE.Point({size: 10, x: 120, y: 120, color: '#ff0', style: 'round'});
-            pointLayer.setData([point1, point2]);
+            document.getElementById('translate').addEventListener('input', function (e) {
+                geo1.translate([e.target.value * 2, 0, 0]);
+            });
+            document.getElementById('rotate').addEventListener('input', function (e) {
+                geo2.translate([e.target.value, 0, 0]);
+            });
         </script>
     </body>
 </html>

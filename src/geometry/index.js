@@ -56,13 +56,22 @@ export default class GeometryLayer extends BaseLayer {
             attributes: [{name: 'aColor', size: 4, type: this.gl.UNSIGNED_BYTE, normalize: true}],
         });
     }
-
+    setUniforms(matrix) {
+        const gl = this.gl;
+        let matrixUniformLocation = gl.getUniformLocation(this.glProgram, 'u_matrix');
+        gl.uniformMatrix4fv(matrixUniformLocation, false, matrix);
+    }
     draw() {
         let gl = this.gl;
-
         let primitiveType = gl.TRIANGLES; // 绘制类型
         let offset = 0; // 从缓冲读取时的偏移量
-        let count = this.pointsLength; // 着色器运行次数
-        gl.drawArrays(primitiveType, offset, count);
+        let count = 0; // 着色器运行次数
+        this.data.forEach(geometry => {
+            let matrix = geometry.computeMatrix(this.projectionMatrix);
+            this.setUniforms(matrix);
+            count = geometry.data.length;
+            gl.drawArrays(primitiveType, offset, count);
+            offset += count;
+        });
     }
 }

@@ -2,11 +2,13 @@ import {getProgram} from './gl';
 import {mat4} from 'gl-matrix';
 export default class BaseLayer {
     setDataTimer = null;
+    renderTimer = null;
     gl = null;
     opts = {};
     canvas = null;
     data = [];
     bufferData = [];
+    view = null;
     constructor(options) {
         this.opts = options || {};
     }
@@ -17,20 +19,16 @@ export default class BaseLayer {
         this.buffer = gl.createBuffer();
 
         let matrix = mat4.create();
-        this.projectionMatrix = mat4.ortho(matrix, 0, this.canvas.clientWidth, this.canvas.clientHeight, 0, 100, -100);
-        mat4.rotate(matrix, matrix, (20 / 180) * Math.PI, [0, 1, 0]);
+        this.projectionMatrix = mat4.ortho(matrix, 0, this.canvas.clientWidth, this.canvas.clientHeight, 0, 50, -50);
     }
-    getShaders() {
-        return {
-            vs_source: '',
-            fs_source: '',
-        };
+    setView(view) {
+        this.view = view;
     }
     update() {
         window.cancelAnimationFrame(this.setDataTimer);
         this.setDataTimer = window.requestAnimationFrame(() => {
             this.processData();
-            this.render();
+            this.view && this.view.render();
         });
     }
 
@@ -42,6 +40,33 @@ export default class BaseLayer {
         this.update();
     }
 
+    bind(target) {
+        if (Array.isArray(target)) {
+            target.forEach(item => {
+                item.setLayer(this);
+            });
+        } else {
+            target.setLayer(this);
+        }
+        this.setData(target);
+    }
+    unbind(target) {
+        let len = this.data.length;
+        if (Array.isArray(target)) {
+            target.forEach(item => {
+                item.layer = null;
+                let i = this.data.findIndex(item);
+                i > -1 && this.data.splice(i, 1);
+            });
+        } else {
+            target.layer = null;
+            let i = this.data.findIndex(target);
+            i > -1 && this.data.splice(i, 1);
+        }
+        if (this.data.length !== len) {
+            this.setData(this.data);
+        }
+    }
     destroy() {}
 
     setBuffersAndAttributes() {
@@ -66,14 +91,19 @@ export default class BaseLayer {
         });
     }
 
-    render() {
+    setUniforms() {
         const gl = this.gl;
-        gl.useProgram(this.glProgram);
-        this.setBuffersAndAttributes();
         let matrixUniformLocation = gl.getUniformLocation(this.glProgram, 'u_matrix');
         gl.uniformMatrix4fv(matrixUniformLocation, false, this.projectionMatrix);
+    }
 
-        // gl.clear(gl.COLOR_BUFFER_BIT);
-        this.draw();
+    render() {
+        window.cancelAnimationFrame(this.renderTimer);
+        this.renderTimer = window.requestAnimationFrame(() => {
+            const gl = this.gl;
+            gl.useProgram(this.glProgram);
+            this.setBuffersAndAttributes();
+            this.draw();
+        });
     }
 }

@@ -13,6 +13,9 @@
                 width: 300px;
                 height: 200px;
             }
+            canvas {
+                border: 1px solid #000;
+            }
         </style>
     </head>
     <body>
@@ -27,16 +30,12 @@
 
         const point1 = new YUE.Point({size: 20, x: 100, y: 80, color: '#ff00ddaa'});
         const point2 = new YUE.Point({size: 30, x: 120, y: 120, color: '#ff0', style: 'round'});
-        pointLayer.setData([point1, point2]);
+        pointLayer.bind([point1, point2]);
 
-        point1.update = function(){
-            pointLayer.update();
-        }
         setTimeout(() => {
             point1.color = '#000000';
             point1.x += 20;
             point2.size = 15;
-            // pointLayer.update();
-        }, 3000)
+        }, 2000);
     </script>
 </html>

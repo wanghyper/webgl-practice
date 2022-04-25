@@ -222,8 +222,6 @@ var YUE = (function (exports) {
    * Common utilities
    * @module glMatrix
    */
-  // Configuration Constants
-  var EPSILON = 0.000001;
   var ARRAY_TYPE = typeof Float32Array !== 'undefined' ? Float32Array : Array;
   if (!Math.hypot) Math.hypot = function () {
     var y = 0,
@@ -272,87 +270,64 @@ var YUE = (function (exports) {
     return out;
   }
   /**
-   * Rotates a mat4 by the given angle around the given axis
+   * Translate a mat4 by the given vector
    *
    * @param {mat4} out the receiving matrix
-   * @param {ReadonlyMat4} a the matrix to rotate
-   * @param {Number} rad the angle to rotate the matrix by
-   * @param {ReadonlyVec3} axis the axis to rotate around
+   * @param {ReadonlyMat4} a the matrix to translate
+   * @param {ReadonlyVec3} v vector to translate by
    * @returns {mat4} out
    */
 
-  function rotate(out, a, rad, axis) {
-    var x = axis[0],
-        y = axis[1],
-        z = axis[2];
-    var len = Math.hypot(x, y, z);
-    var s, c, t;
+  function translate(out, a, v) {
+    var x = v[0],
+        y = v[1],
+        z = v[2];
     var a00, a01, a02, a03;
     var a10, a11, a12, a13;
     var a20, a21, a22, a23;
-    var b00, b01, b02;
-    var b10, b11, b12;
-    var b20, b21, b22;
 
-    if (len < EPSILON) {
-      return null;
-    }
-
-    len = 1 / len;
-    x *= len;
-    y *= len;
-    z *= len;
-    s = Math.sin(rad);
-    c = Math.cos(rad);
-    t = 1 - c;
-    a00 = a[0];
-    a01 = a[1];
-    a02 = a[2];
-    a03 = a[3];
-    a10 = a[4];
-    a11 = a[5];
-    a12 = a[6];
-    a13 = a[7];
-    a20 = a[8];
-    a21 = a[9];
-    a22 = a[10];
-    a23 = a[11]; // Construct the elements of the rotation matrix
-
-    b00 = x * x * t + c;
-    b01 = y * x * t + z * s;
-    b02 = z * x * t - y * s;
-    b10 = x * y * t - z * s;
-    b11 = y * y * t + c;
-    b12 = z * y * t + x * s;
-    b20 = x * z * t + y * s;
-    b21 = y * z * t - x * s;
-    b22 = z * z * t + c; // Perform rotation-specific matrix multiplication
-
-    out[0] = a00 * b00 + a10 * b01 + a20 * b02;
-    out[1] = a01 * b00 + a11 * b01 + a21 * b02;
-    out[2] = a02 * b00 + a12 * b01 + a22 * b02;
-    out[3] = a03 * b00 + a13 * b01 + a23 * b02;
-    out[4] = a00 * b10 + a10 * b11 + a20 * b12;
-    out[5] = a01 * b10 + a11 * b11 + a21 * b12;
-    out[6] = a02 * b10 + a12 * b11 + a22 * b12;
-    out[7] = a03 * b10 + a13 * b11 + a23 * b12;
-    out[8] = a00 * b20 + a10 * b21 + a20 * b22;
-    out[9] = a01 * b20 + a11 * b21 + a21 * b22;
-    out[10] = a02 * b20 + a12 * b21 + a22 * b22;
-    out[11] = a03 * b20 + a13 * b21 + a23 * b22;
-
-    if (a !== out) {
-      // If the source and destination differ, copy the unchanged last row
-      out[12] = a[12];
-      out[13] = a[13];
-      out[14] = a[14];
-      out[15] = a[15];
+    if (a === out) {
+      out[12] = a[0] * x + a[4] * y + a[8] * z + a[12];
+      out[13] = a[1] * x + a[5] * y + a[9] * z + a[13];
+      out[14] = a[2] * x + a[6] * y + a[10] * z + a[14];
+      out[15] = a[3] * x + a[7] * y + a[11] * z + a[15];
+    } else {
+      a00 = a[0];
+      a01 = a[1];
+      a02 = a[2];
+      a03 = a[3];
+      a10 = a[4];
+      a11 = a[5];
+      a12 = a[6];
+      a13 = a[7];
+      a20 = a[8];
+      a21 = a[9];
+      a22 = a[10];
+      a23 = a[11];
+      out[0] = a00;
+      out[1] = a01;
+      out[2] = a02;
+      out[3] = a03;
+      out[4] = a10;
+      out[5] = a11;
+      out[6] = a12;
+      out[7] = a13;
+      out[8] = a20;
+      out[9] = a21;
+      out[10] = a22;
+      out[11] = a23;
+      out[12] = a00 * x + a10 * y + a20 * z + a[12];
+      out[13] = a01 * x + a11 * y + a21 * z + a[13];
+      out[14] = a02 * x + a12 * y + a22 * z + a[14];
+      out[15] = a03 * x + a13 * y + a23 * z + a[15];
     }
 
     return out;
   }
   /**
-   * Generates a orthogonal projection matrix with the given bounds
+   * Generates a orthogonal projection matrix with the given bounds.
+   * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
+   * which matches WebGL/OpenGL's clip volume.
    *
    * @param {mat4} out mat4 frustum matrix will be written into
    * @param {number} left Left bound of the frustum
@@ -364,7 +339,7 @@ var YUE = (function (exports) {
    * @returns {mat4} out
    */
 
-  function ortho(out, left, right, bottom, top, near, far) {
+  function orthoNO(out, left, right, bottom, top, near, far) {
     var lr = 1 / (left - right);
     var bt = 1 / (bottom - top);
     var nf = 1 / (near - far);
@@ -386,12 +361,20 @@ var YUE = (function (exports) {
     out[15] = 1;
     return out;
   }
+  /**
+   * Alias for {@link mat4.orthoNO}
+   * @function
+   */
+
+  var ortho = orthoNO;
 
   var BaseLayer = /*#__PURE__*/function () {
     function BaseLayer(options) {
       _classCallCheck(this, BaseLayer);
 
       _defineProperty(this, "setDataTimer", null);
+
+      _defineProperty(this, "renderTimer", null);
 
       _defineProperty(this, "gl", null);
 
@@ -402,6 +385,8 @@ var YUE = (function (exports) {
       _defineProperty(this, "data", []);
 
       _defineProperty(this, "bufferData", []);
+
+      _defineProperty(this, "view", null);
 
       this.opts = options || {};
     }
@@ -414,16 +399,12 @@ var YUE = (function (exports) {
         this.glProgram = getProgram(gl, this.vertText, this.fragText);
         this.buffer = gl.createBuffer();
         var matrix = create();
-        this.projectionMatrix = ortho(matrix, 0, this.canvas.clientWidth, this.canvas.clientHeight, 0, 100, -100);
-        rotate(matrix, matrix, 20 / 180 * Math.PI, [0, 1, 0]);
+        this.projectionMatrix = ortho(matrix, 0, this.canvas.clientWidth, this.canvas.clientHeight, 0, 50, -50);
       }
     }, {
-      key: "getShaders",
-      value: function getShaders() {
-        return {
-          vs_source: '',
-          fs_source: ''
-        };
+      key: "setView",
+      value: function setView(view) {
+        this.view = view;
       }
     }, {
       key: "update",
@@ -434,7 +415,7 @@ var YUE = (function (exports) {
         this.setDataTimer = window.requestAnimationFrame(function () {
           _this.processData();
 
-          _this.render();
+          _this.view && _this.view.render();
         });
       }
     }, {
@@ -448,12 +429,52 @@ var YUE = (function (exports) {
         this.update();
       }
     }, {
+      key: "bind",
+      value: function bind(target) {
+        var _this2 = this;
+
+        if (Array.isArray(target)) {
+          target.forEach(function (item) {
+            item.setLayer(_this2);
+          });
+        } else {
+          target.setLayer(this);
+        }
+
+        this.setData(target);
+      }
+    }, {
+      key: "unbind",
+      value: function unbind(target) {
+        var _this3 = this;
+
+        var len = this.data.length;
+
+        if (Array.isArray(target)) {
+          target.forEach(function (item) {
+            item.layer = null;
+
+            var i = _this3.data.findIndex(item);
+
+            i > -1 && _this3.data.splice(i, 1);
+          });
+        } else {
+          target.layer = null;
+          var i = this.data.findIndex(target);
+          i > -1 && this.data.splice(i, 1);
+        }
+
+        if (this.data.length !== len) {
+          this.setData(this.data);
+        }
+      }
+    }, {
       key: "destroy",
       value: function destroy() {}
     }, {
       key: "setBuffersAndAttributes",
       value: function setBuffersAndAttributes() {
-        var _this2 = this;
+        var _this4 = this;
 
         var gl = this.gl;
         this.bufferData.forEach(function (item) {
@@ -472,22 +493,33 @@ var YUE = (function (exports) {
                 stride = _item$stride === void 0 ? 0 : _item$stride,
                 _item$offset = item.offset,
                 offset = _item$offset === void 0 ? 0 : _item$offset;
-            var position = gl.getAttribLocation(_this2.glProgram, name);
+            var position = gl.getAttribLocation(_this4.glProgram, name);
             gl.enableVertexAttribArray(position);
             gl.vertexAttribPointer(position, size, type, normalize, stride, offset);
           });
         });
       }
     }, {
+      key: "setUniforms",
+      value: function setUniforms() {
+        var gl = this.gl;
+        var matrixUniformLocation = gl.getUniformLocation(this.glProgram, 'u_matrix');
+        gl.uniformMatrix4fv(matrixUniformLocation, false, this.projectionMatrix);
+      }
+    }, {
       key: "render",
       value: function render() {
-        var gl = this.gl;
-        gl.useProgram(this.glProgram);
-        this.setBuffersAndAttributes();
-        var matrixUniformLocation = gl.getUniformLocation(this.glProgram, 'u_matrix');
-        gl.uniformMatrix4fv(matrixUniformLocation, false, this.projectionMatrix); // gl.clear(gl.COLOR_BUFFER_BIT);
+        var _this5 = this;
 
-        this.draw();
+        window.cancelAnimationFrame(this.renderTimer);
+        this.renderTimer = window.requestAnimationFrame(function () {
+          var gl = _this5.gl;
+          gl.useProgram(_this5.glProgram);
+
+          _this5.setBuffersAndAttributes();
+
+          _this5.draw();
+        });
       }
     }]);
 
@@ -2601,14 +2633,14 @@ var YUE = (function (exports) {
 
   var color = Color;
 
-  function _createSuper$2(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$2(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+  function _createSuper$4(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$4(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
 
-  function _isNativeReflectConstruct$2() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+  function _isNativeReflectConstruct$4() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
 
   var PointLayer = /*#__PURE__*/function (_BaseLayer) {
     _inherits(PointLayer, _BaseLayer);
 
-    var _super = _createSuper$2(PointLayer);
+    var _super = _createSuper$4(PointLayer);
 
     function PointLayer(container, options) {
       var _this;
@@ -2707,6 +2739,7 @@ var YUE = (function (exports) {
         var gl = this.gl;
         var primitiveType = gl.POINTS; // 绘制类型
 
+        this.setUniforms();
         var offset = 0; // 从缓冲读取时的偏移量
 
         var count = this.data.length; // 着色器运行次数
@@ -2722,14 +2755,14 @@ var YUE = (function (exports) {
 
   var fragShader$1 = "precision mediump float;varying vec4 vColor;void main(void){gl_FragColor=vColor;}";
 
-  function _createSuper$1(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$1(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+  function _createSuper$3(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$3(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
 
-  function _isNativeReflectConstruct$1() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+  function _isNativeReflectConstruct$3() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
 
   var GeometryLayer = /*#__PURE__*/function (_BaseLayer) {
     _inherits(GeometryLayer, _BaseLayer);
 
-    var _super = _createSuper$1(GeometryLayer);
+    var _super = _createSuper$3(GeometryLayer);
 
     function GeometryLayer(options) {
       var _this;
@@ -2815,16 +2848,33 @@ var YUE = (function (exports) {
         });
       }
     }, {
+      key: "setUniforms",
+      value: function setUniforms(matrix) {
+        var gl = this.gl;
+        var matrixUniformLocation = gl.getUniformLocation(this.glProgram, 'u_matrix');
+        gl.uniformMatrix4fv(matrixUniformLocation, false, matrix);
+      }
+    }, {
       key: "draw",
       value: function draw() {
+        var _this3 = this;
+
         var gl = this.gl;
         var primitiveType = gl.TRIANGLES; // 绘制类型
 
         var offset = 0; // 从缓冲读取时的偏移量
 
-        var count = this.pointsLength; // 着色器运行次数
+        var count = 0; // 着色器运行次数
 
-        gl.drawArrays(primitiveType, offset, count);
+        this.data.forEach(function (geometry) {
+          var matrix = geometry.computeMatrix(_this3.projectionMatrix);
+
+          _this3.setUniforms(matrix);
+
+          count = geometry.data.length;
+          gl.drawArrays(primitiveType, offset, count);
+          offset += count;
+        });
       }
     }]);
 
@@ -2871,6 +2921,7 @@ var YUE = (function (exports) {
       value: function add(instance) {
         this.instances.push(instance);
         instance.initialize(this.canvas, this.gl);
+        instance.setView(this);
       }
     }, {
       key: "remove",
@@ -3686,14 +3737,14 @@ var YUE = (function (exports) {
 
   var fragShader = "precision mediump float;uniform sampler2D u_image;uniform vec2 u_textureSize;varying vec2 v_texCoord;varying vec4 v_color;void main(void){vec2 onePixel=vec2(1.0,1.0)/u_textureSize;gl_FragColor=(texture2D(u_image,v_texCoord)+texture2D(u_image,v_texCoord+vec2(onePixel.x,0.0))+texture2D(u_image,v_texCoord+vec2(-onePixel.x,0.0)))/3.0;}";
 
-  function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+  function _createSuper$2(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$2(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
 
-  function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+  function _isNativeReflectConstruct$2() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
 
   var Point$1 = /*#__PURE__*/function (_GL) {
     _inherits(Point, _GL);
 
-    var _super = _createSuper(Point);
+    var _super = _createSuper$2(Point);
 
     function Point(canvas, option) {
       var _this;
@@ -3858,11 +3909,48 @@ var YUE = (function (exports) {
     return Point;
   }(BaseLayer);
 
-  var Point = /*#__PURE__*/function () {
+  var CommonModel = /*#__PURE__*/function () {
+    function CommonModel() {
+      _classCallCheck(this, CommonModel);
+
+      _defineProperty(this, "layer", null);
+    }
+
+    _createClass(CommonModel, [{
+      key: "update",
+      value: function update() {
+        if (this.layer) {
+          this.layer.update();
+        }
+      }
+    }, {
+      key: "setLayer",
+      value: function setLayer(layer) {
+        console.log(layer);
+        this.layer = layer;
+      }
+    }]);
+
+    return CommonModel;
+  }();
+
+  function _createSuper$1(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$1(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
+
+  function _isNativeReflectConstruct$1() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
+
+  var Point = /*#__PURE__*/function (_CommonModel) {
+    _inherits(Point, _CommonModel);
+
+    var _super = _createSuper$1(Point);
+
     function Point(options) {
+      var _this;
+
       _classCallCheck(this, Point);
 
-      _defineProperty(this, "opts", {
+      _this = _super.call(this, options);
+
+      _defineProperty(_assertThisInitialized(_this), "opts", {
         x: 0,
         y: 0,
         z: 0,
@@ -3871,9 +3959,8 @@ var YUE = (function (exports) {
         style: 'rect'
       });
 
-      _defineProperty(this, "update", function () {});
-
-      this.opts = Object.assign(this.opts, options);
+      _this.opts = Object.assign(_this.opts, options);
+      return _this;
     }
 
     _createClass(Point, [{
@@ -3888,7 +3975,7 @@ var YUE = (function (exports) {
       },
       set: function set(value) {
         this.opts.x = value;
-        this.update(this.opts);
+        this.update();
       }
     }, {
       key: "y",
@@ -3897,7 +3984,7 @@ var YUE = (function (exports) {
       },
       set: function set(value) {
         this.opts.y = value;
-        this.update(this.opts);
+        this.update();
       }
     }, {
       key: "z",
@@ -3906,7 +3993,7 @@ var YUE = (function (exports) {
       },
       set: function set(value) {
         this.opts.z = value;
-        this.update(this.opts);
+        this.update();
       }
     }, {
       key: "size",
@@ -3915,7 +4002,7 @@ var YUE = (function (exports) {
       },
       set: function set(value) {
         this.opts.size = value;
-        this.update(this.opts);
+        this.update();
       }
     }, {
       key: "color",
@@ -3924,26 +4011,61 @@ var YUE = (function (exports) {
       },
       set: function set(value) {
         this.opts.color = value;
-        this.update(this.opts);
+        this.update();
       }
     }]);
 
     return Point;
-  }();
+  }(CommonModel);
 
-  var Geometry = function Geometry() {
-    var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-    var options = arguments.length > 1 ? arguments[1] : undefined;
+  function _createSuper(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
 
-    _classCallCheck(this, Geometry);
+  function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {})); return true; } catch (e) { return false; } }
 
-    _defineProperty(this, "data", []);
+  var Geometry = /*#__PURE__*/function (_CommonModel) {
+    _inherits(Geometry, _CommonModel);
 
-    _defineProperty(this, "update", function () {});
+    var _super = _createSuper(Geometry);
 
-    this.data = data;
-    this.opts = options;
-  };
+    function Geometry() {
+      var _this;
+
+      var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+      var options = arguments.length > 1 ? arguments[1] : undefined;
+
+      _classCallCheck(this, Geometry);
+
+      _this = _super.call(this);
+
+      _defineProperty(_assertThisInitialized(_this), "matrix", create());
+
+      _defineProperty(_assertThisInitialized(_this), "translateVec3", [0, 0, 0]);
+
+      _this.data = data;
+      _this.opts = options;
+      return _this;
+    }
+
+    _createClass(Geometry, [{
+      key: "translate",
+      value: function translate(vec3) {
+        this.translateVec3 = [vec3[0], vec3[1] || 0, vec3[2] || 0];
+        this.layer.render();
+      }
+    }, {
+      key: "rotateY",
+      value: function rotateY() {}
+    }, {
+      key: "computeMatrix",
+      value: function computeMatrix(projectMatrix) {
+        translate(this.matrix, projectMatrix, this.translateVec3); // mat4.rotate(this.matrix, projectMatrix, (20 / 180) * Math.PI, [0, 1, 0]);
+
+        return this.matrix;
+      }
+    }]);
+
+    return Geometry;
+  }(CommonModel);
 
   exports.Geometry = Geometry;
   exports.GeometryLayer = GeometryLayer;
