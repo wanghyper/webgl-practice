@@ -7,7 +7,6 @@ export default class CommonModel {
         }
     }
     setLayer(layer) {
-        console.log(layer);
         this.layer = layer;
     }
 }

@@ -1,23 +1,38 @@
-import {mat4} from 'gl-matrix';
+import {mat4, glMatrix} from 'gl-matrix';
 import CommonModel from './CommonModel';
 export default class Geometry extends CommonModel {
     matrix = mat4.create();
-    translateVec3 = [0, 0, 0];
+
+    transformStack = [];
+    saveMatrix = null;
+    saveTransformStack = [];
     constructor(data = [], options) {
         super();
         this.data = data;
         this.opts = options;
+        this.save();
     }
     translate(vec3) {
-        this.translateVec3 = [vec3[0], vec3[1] || 0, vec3[2] || 0];
-        this.layer.render();
+        mat4.translate(this.matrix, this.matrix, vec3);
     }
 
-    rotateY() {}
+    rotate(degree, rotateVec3) {
+        mat4.rotate(this.matrix, this.matrix, glMatrix.toRadian(degree), rotateVec3);
+    }
 
-    computeMatrix(projectMatrix) {
-        mat4.translate(this.matrix, projectMatrix, this.translateVec3);
-        // mat4.rotate(this.matrix, projectMatrix, (20 / 180) * Math.PI, [0, 1, 0]);
-        return this.matrix;
+    save() {
+        this.savedMatrix = mat4.clone(this.matrix);
+    }
+
+    restore() {
+        this.matrix = mat4.clone(this.savedMatrix);
+    }
+
+    getComputedMatrix() {
+        return mat4.clone(this.matrix);
+    }
+
+    draw() {
+        this.layer.renderView();
     }
 }

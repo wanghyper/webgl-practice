@@ -2,7 +2,6 @@ import {getProgram} from './gl';
 import {mat4} from 'gl-matrix';
 export default class BaseLayer {
     setDataTimer = null;
-    renderTimer = null;
     gl = null;
     opts = {};
     canvas = null;
@@ -19,16 +18,21 @@ export default class BaseLayer {
         this.buffer = gl.createBuffer();
 
         let matrix = mat4.create();
-        this.projectionMatrix = mat4.ortho(matrix, 0, this.canvas.clientWidth, this.canvas.clientHeight, 0, 50, -50);
+        this.projectionMatrix = mat4.ortho(matrix, 0, this.canvas.clientWidth, this.canvas.clientHeight, 0, 400, -400);
     }
     setView(view) {
         this.view = view;
     }
+
+    renderView() {
+        this.view && this.view.render();
+    }
+
     update() {
         window.cancelAnimationFrame(this.setDataTimer);
         this.setDataTimer = window.requestAnimationFrame(() => {
             this.processData();
-            this.view && this.view.render();
+            this.renderView();
         });
     }
 
@@ -98,12 +102,10 @@ export default class BaseLayer {
     }
 
     render() {
-        window.cancelAnimationFrame(this.renderTimer);
-        this.renderTimer = window.requestAnimationFrame(() => {
-            const gl = this.gl;
-            gl.useProgram(this.glProgram);
-            this.setBuffersAndAttributes();
-            this.draw();
-        });
+        const gl = this.gl;
+        gl.useProgram(this.glProgram);
+        this.setBuffersAndAttributes();
+        this.setUniforms();
+        this.draw();
     }
 }

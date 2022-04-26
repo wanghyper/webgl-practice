@@ -56,9 +56,9 @@ export default class GeometryLayer extends BaseLayer {
             attributes: [{name: 'aColor', size: 4, type: this.gl.UNSIGNED_BYTE, normalize: true}],
         });
     }
-    setUniforms(matrix) {
+    setModelUniforms(matrix) {
         const gl = this.gl;
-        let matrixUniformLocation = gl.getUniformLocation(this.glProgram, 'u_matrix');
+        let matrixUniformLocation = gl.getUniformLocation(this.glProgram, 'u_modelMatrix');
         gl.uniformMatrix4fv(matrixUniformLocation, false, matrix);
     }
     draw() {
@@ -67,8 +67,8 @@ export default class GeometryLayer extends BaseLayer {
         let offset = 0; // 从缓冲读取时的偏移量
         let count = 0; // 着色器运行次数
         this.data.forEach(geometry => {
-            let matrix = geometry.computeMatrix(this.projectionMatrix);
-            this.setUniforms(matrix);
+            let matrix = geometry.getComputedMatrix();
+            this.setModelUniforms(matrix);
             count = geometry.data.length;
             gl.drawArrays(primitiveType, offset, count);
             offset += count;

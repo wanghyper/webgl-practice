@@ -43,6 +43,8 @@ export default class View {
     }
 
     render() {
+        const gl = this.gl;
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         this.instances.forEach(instance => {
             instance.render();
         });

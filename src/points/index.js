@@ -57,7 +57,6 @@ export default class PointLayer extends BaseLayer {
     draw() {
         let gl = this.gl;
         let primitiveType = gl.POINTS; // 绘制类型
-        this.setUniforms();
         let offset = 0; // 从缓冲读取时的偏移量
         let count = this.data.length; // 着色器运行次数
         gl.drawArrays(primitiveType, offset, count);

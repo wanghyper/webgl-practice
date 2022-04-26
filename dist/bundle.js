@@ -174,7 +174,8 @@ var YUE = (function (exports) {
 
       if (gl) {
         gl.clearColor(0, 0, 0, 0);
-        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.enable(gl.DEPTH_TEST);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         gl.viewport(0, 0, canvas.width, canvas.height);
         break;
       }
@@ -222,7 +223,19 @@ var YUE = (function (exports) {
    * Common utilities
    * @module glMatrix
    */
+  // Configuration Constants
+  var EPSILON = 0.000001;
   var ARRAY_TYPE = typeof Float32Array !== 'undefined' ? Float32Array : Array;
+  var degree = Math.PI / 180;
+  /**
+   * Convert Degree To Radian
+   *
+   * @param {Number} a Angle in Degrees
+   */
+
+  function toRadian(a) {
+    return a * degree;
+  }
   if (!Math.hypot) Math.hypot = function () {
     var y = 0,
         i = arguments.length;
@@ -267,6 +280,33 @@ var YUE = (function (exports) {
     out[5] = 1;
     out[10] = 1;
     out[15] = 1;
+    return out;
+  }
+  /**
+   * Creates a new mat4 initialized with values from an existing matrix
+   *
+   * @param {ReadonlyMat4} a matrix to clone
+   * @returns {mat4} a new 4x4 matrix
+   */
+
+  function clone(a) {
+    var out = new ARRAY_TYPE(16);
+    out[0] = a[0];
+    out[1] = a[1];
+    out[2] = a[2];
+    out[3] = a[3];
+    out[4] = a[4];
+    out[5] = a[5];
+    out[6] = a[6];
+    out[7] = a[7];
+    out[8] = a[8];
+    out[9] = a[9];
+    out[10] = a[10];
+    out[11] = a[11];
+    out[12] = a[12];
+    out[13] = a[13];
+    out[14] = a[14];
+    out[15] = a[15];
     return out;
   }
   /**
@@ -325,6 +365,86 @@ var YUE = (function (exports) {
     return out;
   }
   /**
+   * Rotates a mat4 by the given angle around the given axis
+   *
+   * @param {mat4} out the receiving matrix
+   * @param {ReadonlyMat4} a the matrix to rotate
+   * @param {Number} rad the angle to rotate the matrix by
+   * @param {ReadonlyVec3} axis the axis to rotate around
+   * @returns {mat4} out
+   */
+
+  function rotate(out, a, rad, axis) {
+    var x = axis[0],
+        y = axis[1],
+        z = axis[2];
+    var len = Math.hypot(x, y, z);
+    var s, c, t;
+    var a00, a01, a02, a03;
+    var a10, a11, a12, a13;
+    var a20, a21, a22, a23;
+    var b00, b01, b02;
+    var b10, b11, b12;
+    var b20, b21, b22;
+
+    if (len < EPSILON) {
+      return null;
+    }
+
+    len = 1 / len;
+    x *= len;
+    y *= len;
+    z *= len;
+    s = Math.sin(rad);
+    c = Math.cos(rad);
+    t = 1 - c;
+    a00 = a[0];
+    a01 = a[1];
+    a02 = a[2];
+    a03 = a[3];
+    a10 = a[4];
+    a11 = a[5];
+    a12 = a[6];
+    a13 = a[7];
+    a20 = a[8];
+    a21 = a[9];
+    a22 = a[10];
+    a23 = a[11]; // Construct the elements of the rotation matrix
+
+    b00 = x * x * t + c;
+    b01 = y * x * t + z * s;
+    b02 = z * x * t - y * s;
+    b10 = x * y * t - z * s;
+    b11 = y * y * t + c;
+    b12 = z * y * t + x * s;
+    b20 = x * z * t + y * s;
+    b21 = y * z * t - x * s;
+    b22 = z * z * t + c; // Perform rotation-specific matrix multiplication
+
+    out[0] = a00 * b00 + a10 * b01 + a20 * b02;
+    out[1] = a01 * b00 + a11 * b01 + a21 * b02;
+    out[2] = a02 * b00 + a12 * b01 + a22 * b02;
+    out[3] = a03 * b00 + a13 * b01 + a23 * b02;
+    out[4] = a00 * b10 + a10 * b11 + a20 * b12;
+    out[5] = a01 * b10 + a11 * b11 + a21 * b12;
+    out[6] = a02 * b10 + a12 * b11 + a22 * b12;
+    out[7] = a03 * b10 + a13 * b11 + a23 * b12;
+    out[8] = a00 * b20 + a10 * b21 + a20 * b22;
+    out[9] = a01 * b20 + a11 * b21 + a21 * b22;
+    out[10] = a02 * b20 + a12 * b21 + a22 * b22;
+    out[11] = a03 * b20 + a13 * b21 + a23 * b22;
+
+    if (a !== out) {
+      // If the source and destination differ, copy the unchanged last row
+      out[12] = a[12];
+      out[13] = a[13];
+      out[14] = a[14];
+      out[15] = a[15];
+    }
+
+    return out;
+  }
+  /**
    * Generates a orthogonal projection matrix with the given bounds.
    * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
    * which matches WebGL/OpenGL's clip volume.
@@ -374,8 +494,6 @@ var YUE = (function (exports) {
 
       _defineProperty(this, "setDataTimer", null);
 
-      _defineProperty(this, "renderTimer", null);
-
       _defineProperty(this, "gl", null);
 
       _defineProperty(this, "opts", {});
@@ -399,12 +517,17 @@ var YUE = (function (exports) {
         this.glProgram = getProgram(gl, this.vertText, this.fragText);
         this.buffer = gl.createBuffer();
         var matrix = create();
-        this.projectionMatrix = ortho(matrix, 0, this.canvas.clientWidth, this.canvas.clientHeight, 0, 50, -50);
+        this.projectionMatrix = ortho(matrix, 0, this.canvas.clientWidth, this.canvas.clientHeight, 0, 400, -400);
       }
     }, {
       key: "setView",
       value: function setView(view) {
         this.view = view;
+      }
+    }, {
+      key: "renderView",
+      value: function renderView() {
+        this.view && this.view.render();
       }
     }, {
       key: "update",
@@ -415,7 +538,7 @@ var YUE = (function (exports) {
         this.setDataTimer = window.requestAnimationFrame(function () {
           _this.processData();
 
-          _this.view && _this.view.render();
+          _this.renderView();
         });
       }
     }, {
@@ -509,17 +632,11 @@ var YUE = (function (exports) {
     }, {
       key: "render",
       value: function render() {
-        var _this5 = this;
-
-        window.cancelAnimationFrame(this.renderTimer);
-        this.renderTimer = window.requestAnimationFrame(function () {
-          var gl = _this5.gl;
-          gl.useProgram(_this5.glProgram);
-
-          _this5.setBuffersAndAttributes();
-
-          _this5.draw();
-        });
+        var gl = this.gl;
+        gl.useProgram(this.glProgram);
+        this.setBuffersAndAttributes();
+        this.setUniforms();
+        this.draw();
       }
     }]);
 
@@ -2739,7 +2856,6 @@ var YUE = (function (exports) {
         var gl = this.gl;
         var primitiveType = gl.POINTS; // 绘制类型
 
-        this.setUniforms();
         var offset = 0; // 从缓冲读取时的偏移量
 
         var count = this.data.length; // 着色器运行次数
@@ -2751,7 +2867,7 @@ var YUE = (function (exports) {
     return PointLayer;
   }(BaseLayer);
 
-  var vertShader$1 = "attribute vec3 aPos;attribute vec4 aColor;varying vec4 vColor;uniform mat4 u_matrix;void main(void){gl_Position=u_matrix*vec4(aPos,1.0);vColor=aColor;}";
+  var vertShader$1 = "attribute vec4 aPos;attribute vec4 aColor;varying vec4 vColor;uniform mat4 u_matrix;uniform mat4 u_modelMatrix;void main(void){gl_Position=u_matrix*u_modelMatrix*aPos;vColor=aColor;}";
 
   var fragShader$1 = "precision mediump float;varying vec4 vColor;void main(void){gl_FragColor=vColor;}";
 
@@ -2848,10 +2964,10 @@ var YUE = (function (exports) {
         });
       }
     }, {
-      key: "setUniforms",
-      value: function setUniforms(matrix) {
+      key: "setModelUniforms",
+      value: function setModelUniforms(matrix) {
         var gl = this.gl;
-        var matrixUniformLocation = gl.getUniformLocation(this.glProgram, 'u_matrix');
+        var matrixUniformLocation = gl.getUniformLocation(this.glProgram, 'u_modelMatrix');
         gl.uniformMatrix4fv(matrixUniformLocation, false, matrix);
       }
     }, {
@@ -2867,9 +2983,9 @@ var YUE = (function (exports) {
         var count = 0; // 着色器运行次数
 
         this.data.forEach(function (geometry) {
-          var matrix = geometry.computeMatrix(_this3.projectionMatrix);
+          var matrix = geometry.getComputedMatrix();
 
-          _this3.setUniforms(matrix);
+          _this3.setModelUniforms(matrix);
 
           count = geometry.data.length;
           gl.drawArrays(primitiveType, offset, count);
@@ -2936,6 +3052,8 @@ var YUE = (function (exports) {
     }, {
       key: "render",
       value: function render() {
+        var gl = this.gl;
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         this.instances.forEach(function (instance) {
           instance.render();
         });
@@ -3926,7 +4044,6 @@ var YUE = (function (exports) {
     }, {
       key: "setLayer",
       value: function setLayer(layer) {
-        console.log(layer);
         this.layer = layer;
       }
     }]);
@@ -4039,28 +4156,49 @@ var YUE = (function (exports) {
 
       _defineProperty(_assertThisInitialized(_this), "matrix", create());
 
-      _defineProperty(_assertThisInitialized(_this), "translateVec3", [0, 0, 0]);
+      _defineProperty(_assertThisInitialized(_this), "transformStack", []);
+
+      _defineProperty(_assertThisInitialized(_this), "saveMatrix", null);
+
+      _defineProperty(_assertThisInitialized(_this), "saveTransformStack", []);
 
       _this.data = data;
       _this.opts = options;
+
+      _this.save();
+
       return _this;
     }
 
     _createClass(Geometry, [{
       key: "translate",
-      value: function translate(vec3) {
-        this.translateVec3 = [vec3[0], vec3[1] || 0, vec3[2] || 0];
-        this.layer.render();
+      value: function translate$1(vec3) {
+        translate(this.matrix, this.matrix, vec3);
       }
     }, {
-      key: "rotateY",
-      value: function rotateY() {}
+      key: "rotate",
+      value: function rotate$1(degree, rotateVec3) {
+        rotate(this.matrix, this.matrix, toRadian(degree), rotateVec3);
+      }
     }, {
-      key: "computeMatrix",
-      value: function computeMatrix(projectMatrix) {
-        translate(this.matrix, projectMatrix, this.translateVec3); // mat4.rotate(this.matrix, projectMatrix, (20 / 180) * Math.PI, [0, 1, 0]);
-
-        return this.matrix;
+      key: "save",
+      value: function save() {
+        this.savedMatrix = clone(this.matrix);
+      }
+    }, {
+      key: "restore",
+      value: function restore() {
+        this.matrix = clone(this.savedMatrix);
+      }
+    }, {
+      key: "getComputedMatrix",
+      value: function getComputedMatrix() {
+        return clone(this.matrix);
+      }
+    }, {
+      key: "draw",
+      value: function draw() {
+        this.layer.renderView();
       }
     }]);
 

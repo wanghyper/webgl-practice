@@ -51,9 +51,17 @@
             view.add(geometryLayer);
 
             const geo1 = new YUE.Geometry([
-                [10, 10, 0, 'red'],
-                [50, 50, 0, 'green'],
-                [50, 10, 0, 'blue'],
+                [20, 20, 0, '#555'],
+                [150, 20, 0, '#555'],
+                [20, 150, 0, '#555'],
+
+                [20, 20, 0, '#333'],
+                [150, 20, 0, '#333'],
+                [20, 20, 150, '#333'],
+
+                [20, 20, 0, '#111'],
+                [20, 150, 0, '#111'],
+                [20, 20, 150, '#111'],
             ]);
 
             const geo2 = new YUE.Geometry([
@@ -68,15 +76,45 @@
                 [200, 50, 0],
                 [200, 50, 50],
                 [200, 150, 50],
+
+                [50, 50, 50, 'blue'],
+                [50, 150, 50, 'blue'],
+                [200, 50, 50, 'blue'],
+
+                [200, 50, 50, 'yellow'],
+                [50, 150, 50, 'yellow'],
+                [200, 150, 50, 'yellow'],
             ]);
             geometryLayer.bind([geo1, geo2]);
 
             document.getElementById('translate').addEventListener('input', function (e) {
-                geo1.translate([e.target.value * 2, 0, 0]);
+                let value = getValue(e.target);
+                geo2.translate([value, 0, 0]);
+                geo2.draw();
+
+                geo1.rotate(value, [0, 1, 0]);
+                geo1.draw();
             });
             document.getElementById('rotate').addEventListener('input', function (e) {
-                geo2.translate([e.target.value, 0, 0]);
+                let value = getValue(e.target);
+                geo1.rotate(value, [1, 0, 0]);
+                geo1.draw();
             });
+            function getValue(e) {
+                if (typeof e.lastValue === 'undefined') {
+                    e.lastValue = 0;
+                }
+                let value = e.value - e.lastValue;
+                e.lastValue = e.value;
+                return value;
+            }
+
+            const pointLayer = new YUE.PointLayer();
+            view.add(pointLayer);
+
+            const point1 = new YUE.Point({size: 20, x: 100, y: 80, z: 10, color: '#ff00ddaa'});
+            const point2 = new YUE.Point({size: 30, x: 150, y: 100, z: 0, color: '#ff0', style: 'round'});
+            pointLayer.bind([point1, point2]);
         </script>
     </body>
 </html>
