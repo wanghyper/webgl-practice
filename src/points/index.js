@@ -14,7 +14,7 @@ export default class PointLayer extends BaseLayer {
         let vertexData = [];
         let colorData = [];
         this.data.forEach(point => {
-            let {x, y, z, color, size, style} = point.data;
+            let {x, y, z, color = '#000', size = 10, style} = point.data;
             vertexData.push(x, y, z, size, style === 'rect' ? 1 : 0);
             color = Color(color).array();
             let [r, g, b, a = 1] = color;

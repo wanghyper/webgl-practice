@@ -3,7 +3,7 @@ import vertShader from './vert.glsl';
 import fragShader from './frag.glsl';
 import Color from 'color';
 
-export default class GeometryLayer extends BaseLayer {
+export default class LineLayer extends BaseLayer {
     vertexData = [];
     colorData = [];
     vertText = vertShader;
@@ -60,7 +60,7 @@ export default class GeometryLayer extends BaseLayer {
     }
     draw() {
         let gl = this.gl;
-        let primitiveType = gl.TRIANGLES; // 绘制类型
+        let primitiveType = gl.LINES; // 绘制类型
         let offset = 0; // 从缓冲读取时的偏移量
         let count = 0; // 着色器运行次数
         this.data.forEach(geometry => {

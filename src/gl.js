@@ -1,9 +1,9 @@
-export function getGLContext(canvas) {
+export function getGLContext(canvas, options) {
     let gl = null;
     let glContextNames = ['webgl', 'experimental-webgl'];
     for (let i = 0; i < glContextNames.length; i++) {
         try {
-            gl = canvas.getContext(glContextNames[i], {antialias: false});
+            gl = canvas.getContext(glContextNames[i], options);
         } catch (e) {
             console.error('get gl context failed', e);
         }

@@ -9,10 +9,12 @@
             html,
             body {
                 margin: 0;
+                height: 100%;
             }
-            #container {
-                width: 300px;
-                height: 200px;
+            #container,
+            #container1 {
+                width: 900px;
+                height: 400px;
             }
             canvas {
                 border: 1px solid #000;
@@ -32,36 +34,69 @@
     </head>
     <body>
         <div class="panel">
+            正交投影
             <label>
-                平移
-                <input type="range" value="0" id="translate" max="200" />
+                X平移
+                <input type="range" value="0" id="translateX" max="200" />
             </label>
             <label>
-                旋转
-                <input type="range" value="0" id="rotate" />
+                Y平移
+                <input type="range" value="0" id="translateY" max="200" />
+            </label>
+            <label>
+                X旋转
+                <input type="range" value="0" id="rotateX" />
+            </label>
+            <label>
+                Y旋转
+                <input type="range" value="0" id="rotateY" />
+            </label>
+            <label>
+                Z旋转
+                <input type="range" value="0" id="rotateZ" />
             </label>
         </div>
         <div id="container"></div>
+        <div class="panel">
+            透视投影
+            <label>
+                X平移
+                <input type="range" value="0" id="rotateX1" />
+            </label>
+            <label>
+                Y平移
+                <input type="range" value="0" id="rotateY1" />
+            </label>
+            <label>
+                Z平移
+                <input type="range" value="0" id="rotateZ1" />
+            </label>
+        </div>
+        <div id="container1"></div>
         <script src="../dist/bundle.js"></script>
 
         <script>
             const container = document.getElementById('container');
-            const view = new YUE.View(container);
+            const container1 = document.getElementById('container1');
+            const view = new YUE.View(container, {projectionType: 'ortho'});
+            const view1 = new YUE.View(container1, {projectionType: 'perspective'});
             const geometryLayer = new YUE.GeometryLayer();
+            const geometryLayer1 = new YUE.GeometryLayer();
             view.add(geometryLayer);
+            view1.add(geometryLayer1);
 
             const geo1 = new YUE.Geometry([
-                [20, 20, 0, '#555'],
-                [150, 20, 0, '#555'],
-                [20, 150, 0, '#555'],
+                [0, 0, 0, '#f00'],
+                [250, 0, 0, '#f00'],
+                [0, 250, 0, '#f00'],
 
-                [20, 20, 0, '#333'],
-                [150, 20, 0, '#333'],
-                [20, 20, 150, '#333'],
+                [0, 0, 0, '#0df'],
+                [250, 0, 0, '#0df'],
+                [0, 0, 250, '#0df'],
 
-                [20, 20, 0, '#111'],
-                [20, 150, 0, '#111'],
-                [20, 20, 150, '#111'],
+                [0, 0, 0, '#111'],
+                [0, 250, 0, '#111'],
+                [0, 0, 250, '#111'],
             ]);
 
             const geo2 = new YUE.Geometry([
@@ -87,18 +122,56 @@
             ]);
             geometryLayer.bind([geo1, geo2]);
 
-            document.getElementById('translate').addEventListener('input', function (e) {
+            const geo3 = geo1.clone();
+            const geo4 = geo2.clone();
+            geometryLayer1.bind([geo3, geo4]);
+
+            document.getElementById('translateX').addEventListener('input', function (e) {
                 let value = getValue(e.target);
                 geo2.translate([value, 0, 0]);
                 geo2.draw();
-
+            });
+            document.getElementById('translateY').addEventListener('input', function (e) {
+                let value = getValue(e.target);
+                geo2.translate([0, value, 0]);
+                geo2.draw();
+            });
+            document.getElementById('rotateX').addEventListener('input', function (e) {
+                let value = getValue(e.target);
+                view.rotate(value, [1, 0, 0]);
+                view.render();
+            });
+            document.getElementById('rotateY').addEventListener('input', function (e) {
+                let value = getValue(e.target);
                 geo1.rotate(value, [0, 1, 0]);
                 geo1.draw();
+
+                geo3.rotate(value, [0, 1, 0]);
+                geo3.draw();
             });
-            document.getElementById('rotate').addEventListener('input', function (e) {
+            document.getElementById('rotateZ').addEventListener('input', function (e) {
                 let value = getValue(e.target);
-                geo1.rotate(value, [1, 0, 0]);
+                geo1.rotate(value * 3, [0, 0, 1]);
                 geo1.draw();
+
+                geo3.rotate(value * 3, [0, 0, 1]);
+                geo3.draw();
+            });
+
+            document.getElementById('rotateX1').addEventListener('input', function (e) {
+                let value = getValue(e.target);
+                view1.translate([-value, 0, 0]);
+                view1.render();
+            });
+            document.getElementById('rotateY1').addEventListener('input', function (e) {
+                let value = getValue(e.target);
+                view1.translate([0, -value, 0]);
+                view1.render();
+            });
+            document.getElementById('rotateZ1').addEventListener('input', function (e) {
+                let value = getValue(e.target);
+                view1.translate([0, 0, -value * 2]);
+                view1.render();
             });
             function getValue(e) {
                 if (typeof e.lastValue === 'undefined') {
@@ -110,11 +183,35 @@
             }
 
             const pointLayer = new YUE.PointLayer();
+            const pointLayer1 = new YUE.PointLayer();
             view.add(pointLayer);
+            view1.add(pointLayer1);
 
-            const point1 = new YUE.Point({size: 20, x: 100, y: 80, z: 10, color: '#ff00ddaa'});
-            const point2 = new YUE.Point({size: 30, x: 150, y: 100, z: 0, color: '#ff0', style: 'round'});
-            pointLayer.bind([point1, point2]);
+            const point1 = new YUE.Point({size: 10, x: 0, y: 0, z: 0, color: '#ff00ddaa'});
+            pointLayer.bind(point1);
+
+            point2 = point1.clone();
+            pointLayer1.bind(point2);
+
+            const line1 = new YUE.Geometry([
+                [0, 0, 0, 'red'],
+                [200, 0, 0, 'red'],
+
+                [0, 0, 0, 'green'],
+                [0, 200, 0, 'green'],
+
+                [0, 0, 0, 'black'],
+                [0, 0, 200, 'black'],
+            ]);
+            const lineLayer = new YUE.LineLayer();
+            const lineLayer1 = new YUE.LineLayer();
+            view.add(lineLayer);
+            view1.add(lineLayer1);
+
+            lineLayer.bind(line1);
+
+            const line2 = line1.clone();
+            lineLayer1.bind(line2);
         </script>
     </body>
 </html>

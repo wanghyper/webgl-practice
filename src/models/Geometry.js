@@ -20,8 +20,16 @@ export default class Geometry extends CommonModel {
         mat4.rotate(this.matrix, this.matrix, glMatrix.toRadian(degree), rotateVec3);
     }
 
+    scale(vec3) {
+        mat4.scale(this.matrix, this.matrix, vec3);
+    }
+
     save() {
         this.savedMatrix = mat4.clone(this.matrix);
+    }
+
+    clone() {
+        return new Geometry(this.data, this.options);
     }
 
     restore() {

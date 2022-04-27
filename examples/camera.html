@@ -4,17 +4,116 @@
         <meta charset="UTF-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Document</title>
+        <title>几何体</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                height: 100%;
+            }
+            #container,
+            #container1 {
+                width: 900px;
+                height: 600px;
+            }
+            canvas {
+                border: 1px solid #000;
+            }
+            .panel {
+                padding: 10px;
+                font-size: 12px;
+            }
+            label {
+                line-height: 16px;
+            }
+            input[type='range'] {
+                margin: 0;
+                vertical-align: bottom;
+            }
+        </style>
     </head>
     <body>
-        <canvas id="canvas"></canvas>
+        <div class="panel">上下左右</div>
+        <div id="container"></div>
         <script src="../dist/bundle.js"></script>
+
         <script>
-            const canvas = document.getElementById('canvas');
-            canvas.width = 600;
-            canvas.height = 600;
-            const layer = new YUE.Camera(canvas);
-            layer.render();
+            const container = document.getElementById('container');
+            const view = new YUE.View(container, {projectionType: 'perspective'});
+            view.lookAt([0, 0, 0], [0, 100, -1000]);
+
+            const geometryLayer = new YUE.GeometryLayer();
+            view.add(geometryLayer);
+
+            const geo1 = new YUE.Geometry([
+                [50, 50, 0, 'red'],
+                [50, 150, 0, 'red'],
+                [200, 50, 0, 'red'],
+
+                [200, 50, 0, 'green'],
+                [50, 150, 0, 'green'],
+                [200, 150, 0, 'green'],
+
+                [200, 50, 0],
+                [200, 50, 50],
+                [200, 150, 50],
+
+                [50, 50, 50, 'blue'],
+                [50, 150, 50, 'blue'],
+                [200, 50, 50, 'blue'],
+
+                [200, 50, 50, 'yellow'],
+                [50, 150, 50, 'yellow'],
+                [200, 150, 50, 'yellow'],
+            ]);
+            geometryLayer.bind([geo1]);
+
+            const line1 = new YUE.Geometry([
+                [0, 0, 0, 'red'],
+                [200, 0, 0, 'red'],
+
+                [0, 0, 0, 'green'],
+                [0, 200, 0, 'green'],
+
+                [0, 0, 0, 'black'],
+                [0, 0, 200, 'black'],
+            ]);
+            const lineLayer = new YUE.LineLayer();
+            view.add(lineLayer);
+
+            lineLayer.bind(line1);
+
+            let cameraPosition = [0, 0, -10];
+            let timeStamp = Date.now();
+            let step = 1;
+            let lastDirection = '';
+            document.addEventListener('keydown', e => {
+                let now = Date.now();
+                console.log(now - timeStamp);
+                if (e.key === lastDirection && now - timeStamp < 100) {
+                    step++;
+                } else {
+                    step = 1;
+                }
+                timeStamp = now;
+                lastDirection = e.key;
+                switch (e.key) {
+                    case 'ArrowUp':
+                        cameraPosition[1] += step;
+                        break;
+                    case 'ArrowDown':
+                        cameraPosition[1] -= step;
+                        break;
+                    case 'ArrowLeft':
+                        cameraPosition[0] -= step;
+                        break;
+                    case 'ArrowRight':
+                        cameraPosition[0] += step;
+                        break;
+                }
+                view.lookAt([0, 0, 0], cameraPosition);
+                view.render();
+            });
         </script>
     </body>
 </html>

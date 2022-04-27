@@ -12,6 +12,9 @@ export default class Point extends CommonModel {
         super(options);
         this.opts = Object.assign(this.opts, options);
     }
+    clone() {
+        return new Point(Object.assign({}, this.opts));
+    }
     get data() {
         return this.opts;
     }

@@ -8,6 +8,7 @@ export default class BaseLayer {
     data = [];
     bufferData = [];
     view = null;
+    projectionMatrix = null;
     constructor(options) {
         this.opts = options || {};
     }
@@ -16,12 +17,27 @@ export default class BaseLayer {
         this.gl = gl;
         this.glProgram = getProgram(gl, this.vertText, this.fragText);
         this.buffer = gl.createBuffer();
-
-        let matrix = mat4.create();
-        this.projectionMatrix = mat4.ortho(matrix, 0, this.canvas.clientWidth, this.canvas.clientHeight, 0, 400, -400);
     }
+
+    rotate(degree, vec3) {
+        mat4.rotate(this.projectionMatrix, this.projectionMatrix, (degree / 180) * Math.PI, vec3);
+    }
+
+    translate(vec3) {
+        mat4.translate(this.projectionMatrix, this.projectionMatrix, vec3);
+    }
+
+    scale(vec3) {
+        mat4.scale(this.projectionMatrix, this.projectionMatrix, vec3);
+    }
+
+    multiply(matrix) {
+        mat4.multiply(this.projectionMatrix, this.projectionMatrix, matrix);
+    }
+
     setView(view) {
         this.view = view;
+        this.projectionMatrix = view.projectionMatrix;
     }
 
     renderView() {
@@ -29,11 +45,8 @@ export default class BaseLayer {
     }
 
     update() {
-        window.cancelAnimationFrame(this.setDataTimer);
-        this.setDataTimer = window.requestAnimationFrame(() => {
-            this.processData();
-            this.renderView();
-        });
+        this.processData();
+        this.renderView();
     }
 
     setData(data) {
