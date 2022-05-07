@@ -3387,9 +3387,13 @@ var YUE = (function (exports) {
 
       _defineProperty(this, "instances", []);
 
+      _defineProperty(this, "enableMouseControl", true);
+
       _defineProperty(this, "projectionMatrix", null);
 
       _defineProperty(this, "originalMatrix", create());
+
+      _defineProperty(this, "cameraMatrix", create());
 
       if (typeof container === 'string') {
         element = document.querySelector(element);
@@ -3399,7 +3403,9 @@ var YUE = (function (exports) {
         throw new TypeError('wrong html element！');
       }
 
+      this.container = element;
       this.opts = options || {};
+      this.enableMouseControl = !!this.opts.enableMouseControl;
       this.data = this.opts.data || [];
       this.canvas = document.createElement('canvas');
       var width = element.clientWidth;
@@ -3418,15 +3424,18 @@ var YUE = (function (exports) {
       key: "setProjectionMatrix",
       value: function setProjectionMatrix() {
         if (this.opts.projectionType === 'ortho') {
-          this.projectionMatrix = ortho(this.originalMatrix, -this.canvas.clientWidth / 2, this.canvas.clientWidth / 2, this.canvas.clientHeight / 2, -this.canvas.clientHeight / 2, 400, -400);
+          this.projectionMatrix = ortho(this.originalMatrix, -this.canvas.clientWidth / 2, this.canvas.clientWidth / 2, -this.canvas.clientHeight / 2, this.canvas.clientHeight / 2, 1000, -1000);
         } else {
           this.projectionMatrix = perspective(this.originalMatrix, 45 * Math.PI / 180, this.canvas.clientWidth / this.canvas.clientHeight, 0.1, 10000);
         }
+
+        this.originalMatrix = clone(this.projectionMatrix);
       }
     }, {
       key: "lookAt",
       value: function lookAt$1(eye, center, up) {
-        lookAt(this.projectionMatrix, eye, center, up || [0, 1, 0]);
+        lookAt(this.cameraMatrix, eye, center, up || [0, 0, 1]);
+        multiply(this.projectionMatrix, this.originalMatrix, this.cameraMatrix);
       }
     }, {
       key: "bindEvents",
@@ -3434,6 +3443,39 @@ var YUE = (function (exports) {
         window.addEventListener('resize', function () {
           console.log('resize');
         });
+
+        if (this.enableMouseControl) {
+          this.canvas.addEventListener('mousedown', this.onMousedown.bind(this));
+          this.canvas.addEventListener('mouseup', this.onMouseup.bind(this));
+          this.canvas.addEventListener('mousemove', this.onMousemove.bind(this));
+        }
+      }
+    }, {
+      key: "onMousedown",
+      value: function onMousedown(e) {
+        this.isMouseDown = true;
+        this.startX = e.clientX;
+        this.startY = e.clientY;
+        this.tempMatrix = clone(this.projectionMatrix);
+      }
+    }, {
+      key: "onMouseup",
+      value: function onMouseup() {
+        this.isMouseDown = false;
+        this.startX = 0;
+        this.startY = 0;
+      }
+    }, {
+      key: "onMousemove",
+      value: function onMousemove(e) {
+        if (this.isMouseDown) {
+          this.moveX = (e.clientX - this.startX) / (this.canvas.clientWidth / 2);
+          this.moveY = (e.clientY - this.startY) / (this.canvas.clientHeight / 2);
+          var matrix = create();
+          translate(matrix, matrix, [this.moveX, -this.moveY, 0]);
+          multiply(this.projectionMatrix, matrix, this.tempMatrix);
+          this.render();
+        }
       }
     }, {
       key: "add",

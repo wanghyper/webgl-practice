@@ -39,8 +39,7 @@
 
         <script>
             const container = document.getElementById('container');
-            const view = new YUE.View(container, {projectionType: 'perspective'});
-            view.lookAt([0, 0, 0], [0, 100, -1000]);
+            const view = new YUE.View(container, {projectionType: 'perspective', enableMouseControl: true});
 
             const geometryLayer = new YUE.GeometryLayer();
             view.add(geometryLayer);
@@ -83,13 +82,16 @@
 
             lineLayer.bind(line1);
 
-            let cameraPosition = [0, 0, -10];
+            let cameraPosition = [-100, -100, 0];
+            let centerPosition = [0, 0, 0];
+            view.lookAt(cameraPosition, centerPosition);
+            view.render();
+
             let timeStamp = Date.now();
             let step = 1;
             let lastDirection = '';
             document.addEventListener('keydown', e => {
                 let now = Date.now();
-                console.log(now - timeStamp);
                 if (e.key === lastDirection && now - timeStamp < 100) {
                     step++;
                 } else {
@@ -100,18 +102,28 @@
                 switch (e.key) {
                     case 'ArrowUp':
                         cameraPosition[1] += step;
+                        centerPosition[1] += step;
                         break;
                     case 'ArrowDown':
                         cameraPosition[1] -= step;
+                        centerPosition[1] -= step;
                         break;
                     case 'ArrowLeft':
                         cameraPosition[0] -= step;
+                        centerPosition[0] -= step;
                         break;
                     case 'ArrowRight':
                         cameraPosition[0] += step;
+                        centerPosition[0] += step;
+                        break;
+                    case 'PageUp':
+                        cameraPosition[2] += step;
+                        break;
+                    case 'PageDown':
+                        cameraPosition[2] -= step;
                         break;
                 }
-                view.lookAt([0, 0, 0], cameraPosition);
+                view.lookAt(cameraPosition, centerPosition);
                 view.render();
             });
         </script>
