@@ -215,6 +215,17 @@ var YUE = (function (exports) {
     var errInfo = gl.getProgramInfoLog(program);
     gl.deleteProgram(program);
     throw new Error(errInfo);
+  } // 创建纹理
+
+  function createAndSetupTexture(gl) {
+    var texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture); // 设置材质，这样我们可以对任意大小的图像进行像素操作
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    return texture;
   }
 
   /**
@@ -3133,9 +3144,9 @@ var YUE = (function (exports) {
     return PointLayer;
   }(BaseLayer);
 
-  var vertShader$2 = "attribute vec4 aPos;attribute vec4 aColor;varying vec4 vColor;uniform mat4 u_matrix;uniform mat4 u_modelMatrix;void main(void){gl_Position=u_matrix*u_modelMatrix*aPos;vColor=aColor;}";
+  var vertShader$2 = "precision mediump float;attribute vec4 aPos;attribute vec4 aColor;attribute vec2 aTexCoord;varying vec4 vColor;varying vec2 vTexCoord;uniform mat4 u_matrix;uniform mat4 u_modelMatrix;uniform float u_useTexture;void main(void){gl_Position=u_matrix*u_modelMatrix*aPos;vColor=aColor;if(u_useTexture>0.0){}}";
 
-  var fragShader$2 = "precision mediump float;varying vec4 vColor;void main(void){gl_FragColor=vColor;}";
+  var fragShader$2 = "precision mediump float;uniform sampler2D u_image;uniform vec2 u_textureSize;uniform float u_useTexture;varying vec2 vTexCoord;varying vec4 vColor;void main(void){if(u_useTexture>0.0){}else{gl_FragColor=vColor;}}";
 
   function _createSuper$4(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$4(); return function _createSuperInternal() { var Super = _getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
 
@@ -3231,6 +3242,44 @@ var YUE = (function (exports) {
         gl.uniformMatrix4fv(matrixUniformLocation, false, matrix);
       }
     }, {
+      key: "setModelTextures",
+      value: function setModelTextures(_ref) {
+        var texCoords = _ref.texCoords,
+            image = _ref.image,
+            data = _ref.data;
+        var length = data.length;
+        var gl = this.gl;
+        var program = this.glProgram;
+        var useTextureSizeLocation = gl.getUniformLocation(program, 'u_useTexture');
+
+        if (!texCoords || !image) {
+          gl.uniform1f(useTextureSizeLocation, -1);
+          return;
+        }
+
+        gl.uniform1f(useTextureSizeLocation, 1);
+        var textureSizeLocation = gl.getUniformLocation(program, 'u_textureSize'); // 找到纹理的地址
+
+        var texCoordLocation = gl.getAttribLocation(program, 'aTexCoord');
+
+        if (!texCoords) {
+          texCoords = new Array(length * 2).fill(-1);
+        } // 给矩形提供纹理坐标
+
+
+        var texCoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(texCoordLocation);
+        gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0); // 创建纹理
+
+        createAndSetupTexture(gl); // 设置图像的大小
+
+        gl.uniform2f(textureSizeLocation, image.width, image.height); // 将图像上传到纹理
+
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+      }
+    }, {
       key: "draw",
       value: function draw() {
         var _this2 = this;
@@ -3246,6 +3295,8 @@ var YUE = (function (exports) {
           var matrix = geometry.getComputedMatrix();
 
           _this2.setModelUniforms(matrix);
+
+          _this2.setModelTextures(geometry);
 
           count = geometry.data.length;
           gl.drawArrays(primitiveType, offset, count);
@@ -3395,6 +3446,14 @@ var YUE = (function (exports) {
 
       _defineProperty(this, "cameraMatrix", create());
 
+      _defineProperty(this, "cameraPosition", [0, 0, 0]);
+
+      _defineProperty(this, "scenePostion", [0, 0, 0]);
+
+      _defineProperty(this, "theta", 0);
+
+      _defineProperty(this, "alpha", 0);
+
       if (typeof container === 'string') {
         element = document.querySelector(element);
       }
@@ -3434,7 +3493,10 @@ var YUE = (function (exports) {
     }, {
       key: "lookAt",
       value: function lookAt$1(eye, center, up) {
-        lookAt(this.cameraMatrix, eye, center, up || [0, 0, 1]);
+        this.cameraPosition = eye;
+        this.scenePostion = center;
+        this.up = up || [0, 0, 1];
+        lookAt(this.cameraMatrix, this.cameraPosition, this.scenePostion, this.up);
         multiply(this.projectionMatrix, this.originalMatrix, this.cameraMatrix);
       }
     }, {
@@ -3456,7 +3518,9 @@ var YUE = (function (exports) {
         this.isMouseDown = true;
         this.startX = e.clientX;
         this.startY = e.clientY;
-        this.tempMatrix = clone(this.projectionMatrix);
+        this.alpha = this.moveX;
+        this.theta = this.moveY;
+        this.tempMatrix = clone(this.cameraMatrix);
       }
     }, {
       key: "onMouseup",
@@ -3471,9 +3535,11 @@ var YUE = (function (exports) {
         if (this.isMouseDown) {
           this.moveX = (e.clientX - this.startX) / (this.canvas.clientWidth / 2);
           this.moveY = (e.clientY - this.startY) / (this.canvas.clientHeight / 2);
-          var matrix = create();
-          translate(matrix, matrix, [this.moveX, -this.moveY, 0]);
-          multiply(this.projectionMatrix, matrix, this.tempMatrix);
+          this.moveX = this.alpha + this.moveX * Math.PI;
+          this.moveY = this.theta + this.moveY * Math.PI;
+          this.up = [Math.sin(this.theta) * Math.sin(this.alpha), Math.sin(this.theta) * Math.cos(this.alpha), Math.cos(this.theta)];
+          rotate(this.cameraMatrix, this.tempMatrix, this.moveX * Math.PI, this.up);
+          multiply(this.projectionMatrix, this.originalMatrix, this.cameraMatrix);
           this.render();
         }
       }
@@ -3496,24 +3562,18 @@ var YUE = (function (exports) {
       }
     }, {
       key: "rotate",
-      value: function rotate(degree, vec3) {
-        this.instances.forEach(function (instance) {
-          instance.rotate(degree, vec3);
-        });
+      value: function rotate$1(degree, vec3) {
+        rotate(this.projectionMatrix, this.projectionMatrix, degree / 180 * Math.PI, vec3);
       }
     }, {
       key: "translate",
-      value: function translate(vec3) {
-        this.instances.forEach(function (instance) {
-          instance.translate(vec3);
-        });
+      value: function translate$1(vec3) {
+        translate(this.projectionMatrix, this.projectionMatrix, vec3);
       }
     }, {
       key: "scale",
-      value: function scale(vec3) {
-        this.instances.forEach(function (instance) {
-          instance.scale(vec3);
-        });
+      value: function scale$1(vec3) {
+        scale(this.projectionMatrix, this.projectionMatrix, vec3);
       }
     }, {
       key: "render",
@@ -4675,6 +4735,22 @@ var YUE = (function (exports) {
       key: "getComputedMatrix",
       value: function getComputedMatrix() {
         return clone(this.matrix);
+      }
+    }, {
+      key: "setTexture",
+      value: function setTexture(texCoords, image) {
+        this.texCoords = texCoords;
+        this.image = image;
+      }
+    }, {
+      key: "setTextureCoords",
+      value: function setTextureCoords(texCoords) {
+        this.texCoords = texCoords;
+      }
+    }, {
+      key: "setTextureImage",
+      value: function setTextureImage(image) {
+        this.image = image;
       }
     }, {
       key: "draw",

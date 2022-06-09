@@ -2,7 +2,7 @@ import {babel} from '@rollup/plugin-babel';
 import serve from 'rollup-plugin-serve';
 import glsl from 'rollup-plugin-glsl';
 import resolve from '@rollup/plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs' 
+import commonjs from 'rollup-plugin-commonjs';
 
 export default {
     input: 'src/index.js',
@@ -13,7 +13,7 @@ export default {
     },
     plugins: [
         resolve(),
-        serve({contentBase: './', port: 10001}),
+        serve({contentBase: './', port: 10001, open: true, openPage: '/examples'}),
         glsl({
             // By default, everything gets included
             include: '**/*.glsl',
@@ -30,6 +30,6 @@ export default {
             ],
             'presets': [['@babel/preset-env']],
         }),
-        commonjs()
+        commonjs(),
     ],
 };

@@ -2,6 +2,7 @@ import BaseLayer from '../base';
 import vertShader from './vert.glsl';
 import fragShader from './frag.glsl';
 import Color from 'color';
+import {createAndSetupTexture} from '../gl';
 
 export default class GeometryLayer extends BaseLayer {
     vertexData = [];
@@ -58,6 +59,38 @@ export default class GeometryLayer extends BaseLayer {
         let matrixUniformLocation = gl.getUniformLocation(this.glProgram, 'u_modelMatrix');
         gl.uniformMatrix4fv(matrixUniformLocation, false, matrix);
     }
+    setModelTextures({texCoords, image, data}) {
+        const length = data.length;
+        const gl = this.gl;
+        const program = this.glProgram;
+
+        var useTextureSizeLocation = gl.getUniformLocation(program, 'u_useTexture');
+        if (!texCoords || !image) {
+            gl.uniform1f(useTextureSizeLocation, -1);
+            return;
+        }
+        gl.uniform1f(useTextureSizeLocation, 1);
+
+        var textureSizeLocation = gl.getUniformLocation(program, 'u_textureSize');
+        // 找到纹理的地址
+        var texCoordLocation = gl.getAttribLocation(program, 'aTexCoord');
+        if (!texCoords) {
+            texCoords = new Array(length * 2).fill(-1);
+        }
+        // 给矩形提供纹理坐标
+        var texCoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoords), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(texCoordLocation);
+        gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+
+        // 创建纹理
+        createAndSetupTexture(gl);
+        // 设置图像的大小
+        gl.uniform2f(textureSizeLocation, image.width, image.height);
+        // 将图像上传到纹理
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    }
     draw() {
         let gl = this.gl;
         let primitiveType = gl.TRIANGLES; // 绘制类型
@@ -66,6 +99,7 @@ export default class GeometryLayer extends BaseLayer {
         this.data.forEach(geometry => {
             let matrix = geometry.getComputedMatrix();
             this.setModelUniforms(matrix);
+            this.setModelTextures(geometry);
             count = geometry.data.length;
             gl.drawArrays(primitiveType, offset, count);
             offset += count;

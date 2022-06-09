@@ -101,8 +101,7 @@
                 lastDirection = e.key;
                 switch (e.key) {
                     case 'ArrowUp':
-                        cameraPosition[1] += step;
-                        centerPosition[1] += step;
+                        view.translate([0, step, 0]);
                         break;
                     case 'ArrowDown':
                         cameraPosition[1] -= step;

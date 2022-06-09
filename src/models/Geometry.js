@@ -40,6 +40,19 @@ export default class Geometry extends CommonModel {
         return mat4.clone(this.matrix);
     }
 
+    setTexture(texCoords, image) {
+        this.texCoords = texCoords;
+        this.image = image;
+    }
+
+    setTextureCoords(texCoords) {
+        this.texCoords = texCoords;
+    }
+
+    setTextureImage(image) {
+        this.image = image;
+    }
+
     draw() {
         this.layer.renderView();
     }

@@ -1,4 +1,4 @@
-import {mat4} from 'gl-matrix';
+import {mat4, vec3} from 'gl-matrix';
 import {getGLContext} from './gl';
 export default class View {
     instances = [];
@@ -6,6 +6,9 @@ export default class View {
     projectionMatrix = null;
     originalMatrix = mat4.create();
     cameraMatrix = mat4.create();
+    cameraPosition = [0, 0, 0];
+    scenePostion = [0, 0, 0];
+
     constructor(element, options) {
         if (typeof container === 'string') {
             element = document.querySelector(element);
@@ -54,7 +57,10 @@ export default class View {
     }
 
     lookAt(eye, center, up) {
-        mat4.lookAt(this.cameraMatrix, eye, center, up || [0, 0, 1]);
+        this.cameraPosition = eye;
+        this.scenePostion = center;
+        this.up = up || [0, 0, 1];
+        mat4.lookAt(this.cameraMatrix, this.cameraPosition, this.scenePostion, this.up);
         mat4.multiply(this.projectionMatrix, this.originalMatrix, this.cameraMatrix);
     }
 
@@ -73,20 +79,30 @@ export default class View {
         this.isMouseDown = true;
         this.startX = e.clientX;
         this.startY = e.clientY;
-        this.tempMatrix = mat4.clone(this.projectionMatrix);
+        this.alpha = this.moveX;
+        this.theta = this.moveY;
+        this.tempMatrix = mat4.clone(this.cameraMatrix);
     }
     onMouseup() {
         this.isMouseDown = false;
         this.startX = 0;
         this.startY = 0;
     }
+    theta = 0;
+    alpha = 0;
     onMousemove(e) {
         if (this.isMouseDown) {
             this.moveX = (e.clientX - this.startX) / (this.canvas.clientWidth / 2);
             this.moveY = (e.clientY - this.startY) / (this.canvas.clientHeight / 2);
-            let matrix = mat4.create();
-            mat4.translate(matrix, matrix, [this.moveX, -this.moveY, 0]);
-            mat4.multiply(this.projectionMatrix, matrix, this.tempMatrix);
+            this.moveX = this.alpha + this.moveX * Math.PI
+            this.moveY = this.theta + this.moveY * Math.PI;
+            this.up = [
+                Math.sin(this.theta) * Math.sin(this.alpha),
+                Math.sin(this.theta) * Math.cos(this.alpha),
+                Math.cos(this.theta),
+            ];
+            mat4.rotate(this.cameraMatrix, this.tempMatrix, this.moveX * Math.PI, this.up);
+            mat4.multiply(this.projectionMatrix, this.originalMatrix, this.cameraMatrix);
             this.render();
         }
     }
@@ -105,21 +121,15 @@ export default class View {
     }
 
     rotate(degree, vec3) {
-        this.instances.forEach(instance => {
-            instance.rotate(degree, vec3);
-        });
+        mat4.rotate(this.projectionMatrix, this.projectionMatrix, (degree / 180) * Math.PI, vec3);
     }
 
     translate(vec3) {
-        this.instances.forEach(instance => {
-            instance.translate(vec3);
-        });
+        mat4.translate(this.projectionMatrix, this.projectionMatrix, vec3);
     }
 
     scale(vec3) {
-        this.instances.forEach(instance => {
-            instance.scale(vec3);
-        });
+        mat4.scale(this.projectionMatrix, this.projectionMatrix, vec3);
     }
 
     render() {
